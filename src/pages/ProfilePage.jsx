@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
 import api from "../api/axios";
 import Navbar from "../components/Navbar";
+import { useAuthStore } from "../store/auth";
 
 export default function ProfilePage() {
+  const { user } = useAuthStore();
+  const isGoogleUser = user?.provider === "GOOGLE";
+
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState({
     firstName: "",
@@ -10,16 +14,23 @@ export default function ProfilePage() {
     phone: "",
     bio: "",
   });
+
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const load = async () => {
       try {
+        // 🔹 Fetch user first to get provider (LOCAL/GOOGLE)
+        const userData = await api.get("/api/auth/me");
+        useAuthStore.setState({ user: userData.data.user });
+
+        // 🔹 Then fetch the profile
         const { data } = await api.get("/api/profile/me");
         setProfile(data.profile);
+
         setForm({
           firstName: data.profile?.firstName || "",
           lastName: data.profile?.lastName || "",
@@ -27,10 +38,11 @@ export default function ProfilePage() {
           bio: data.profile?.bio || "",
         });
       } catch (err) {
-        console.error("Error fetching profile:", err);
+        console.error("Error loading profile:", err);
       }
     };
-    fetchProfile();
+
+    load();
   }, []);
 
   const handleUpdate = async (e) => {
@@ -64,7 +76,7 @@ export default function ProfilePage() {
       <div className="max-w-2xl mx-auto mt-24 bg-white/10 p-6 rounded-2xl shadow-lg border border-white/10">
         <h1 className="text-3xl font-semibold mb-6">My Profile</h1>
 
-        {/* 🔹 Profile Info Form */}
+        {/* 🔹 Profile Form */}
         <form onSubmit={handleUpdate} className="space-y-5">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
@@ -159,65 +171,80 @@ export default function ProfilePage() {
             )}
           </div>
         </form>
+
         {/* 🔹 Change Password Section */}
         <hr className="my-10 border-gray-700" />
-        <h2 className="text-2xl font-semibold mb-4">Change Password</h2>
-        <p className="text-gray-400 mb-6">
-          Enter your current password and a new password to update it securely.
-        </p>
 
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (!currentPassword || !newPassword) {
-              alert("Please fill in both fields.");
-              return;
-            }
-            try {
-              const { data } = await api.post("/api/auth/change-password", {
-                currentPassword,
-                newPassword,
-              });
-              alert(data.message || "Password updated successfully!");
-              setCurrentPassword("");
-              setNewPassword("");
-            } catch (err) {
-              alert(err.response?.data?.message || "Error updating password");
-            }
-          }}
-          className="space-y-4"
-        >
-          <div>
-            <label className="text-sm text-gray-400">Current Password</label>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2 mt-1 outline-none focus:ring-2 focus:ring-blue-600"
-              placeholder="Enter your current password"
-              required
-            />
-          </div>
+        {!isGoogleUser ? (
+          <>
+            <h2 className="text-2xl font-semibold mb-4">Change Password</h2>
+            <p className="text-gray-400 mb-6">
+              Enter your current password and a new password to update it
+              securely.
+            </p>
 
-          <div>
-            <label className="text-sm text-gray-400">New Password</label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2 mt-1 outline-none focus:ring-2 focus:ring-blue-600"
-              placeholder="Enter your new password"
-              required
-            />
-          </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!currentPassword || !newPassword) {
+                  alert("Please fill in both fields.");
+                  return;
+                }
+                try {
+                  const { data } = await api.post("/api/auth/change-password", {
+                    currentPassword,
+                    newPassword,
+                  });
+                  alert(data.message || "Password updated successfully!");
+                  setCurrentPassword("");
+                  setNewPassword("");
+                } catch (err) {
+                  alert(
+                    err.response?.data?.message || "Error updating password"
+                  );
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="text-sm text-gray-400">
+                  Current Password
+                </label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2 mt-1 outline-none focus:ring-2 focus:ring-blue-600"
+                  placeholder="Enter your current password"
+                  required
+                />
+              </div>
 
-          <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-xl mt-4 transition"
-          >
-            Update Password
-          </button>
-        </form>
+              <div>
+                <label className="text-sm text-gray-400">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2 mt-1 outline-none focus:ring-2 focus:ring-blue-600"
+                  placeholder="Enter your new password"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-xl mt-4 transition"
+              >
+                Update Password
+              </button>
+            </form>
+          </>
+        ) : (
+          <p className="text-gray-400 text-sm italic">
+            You logged in with Google. Password changes are disabled.
+          </p>
+        )}
       </div>
     </div>
   );

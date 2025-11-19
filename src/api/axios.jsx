@@ -2,50 +2,42 @@ import axios from "axios";
 import { useAuthStore } from "../store/auth";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-  withCredentials: true, // allow cookies for refresh
+  baseURL: "http://localhost:4000",
+  withCredentials: true,
 });
-
-// attach access token (if we have one)
-api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken;
-  if (token) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-let refreshing = false;
-let queue = [];
 
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
-    const original = error.config || {};
+    const original = error.config;
+    const state = useAuthStore.getState();
 
+    // 🚫 If no token exists → user logged out → NEVER refresh
+    if (!state.accessToken) {
+      return Promise.reject(error);
+    }
+
+    // 🚫 Never refresh for these protected routes
+    if (
+      original.url.includes("/auth/login") ||
+      original.url.includes("/auth/register") ||
+      original.url.includes("/auth/logout") ||
+      original.url.includes("/auth/me") || // fixes profile reload
+      original.url.includes("/profile/me") // fixes refresh loop
+    ) {
+      return Promise.reject(error);
+    }
+
+    // 🔁 Try refresh only ONCE
     if (error.response?.status === 401 && !original._retry) {
-      if (refreshing) {
-        await new Promise((resolve) => queue.push(resolve));
-        original._retry = true;
-        return api(original);
-      }
-
-      refreshing = true;
+      original._retry = true;
       try {
-        const { data } = await api.post("/api/auth/refresh");
-        const token =
-          data?.accessToken || data?.token || data?.access_token || null;
-        if (token) useAuthStore.getState().setAuth(token, data?.user ?? null);
-        queue.forEach((fn) => fn());
-        queue = [];
-        original._retry = true;
+        const newToken = await state.refresh();
+        original.headers["Authorization"] = `Bearer ${newToken}`;
         return api(original);
-      } catch (e) {
-        useAuthStore.getState().logout();
-        throw e;
-      } finally {
-        refreshing = false;
+      } catch {
+        state.logout();
+        return Promise.reject(error);
       }
     }
 

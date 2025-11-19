@@ -26,13 +26,19 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
     try {
       await login(email, password);
-      const user = useAuthStore.getState().user;
-      if (user?.role === "ADMIN") navigate("/admin-dashboard");
+
+      const state = useAuthStore.getState();
+      const user = state?.user;
+
+      if (!user) throw new Error("Invalid user data");
+
+      if (user.role === "ADMIN") navigate("/admin-dashboard");
       else navigate("/dashboard");
     } catch (err) {
-      setError(err?.response?.data?.message || "Login failed");
+      setError(err.message || "Invalid email or password");
     } finally {
       setLoading(false);
     }

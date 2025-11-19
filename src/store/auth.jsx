@@ -6,12 +6,13 @@ export const useAuthStore = create(
   persist(
     (set, get) => ({
       accessToken: null,
-      refreshToken: null, // ✅ Add this line
+      refreshToken: null,
       user: null,
+
       hydrated: false,
       setHydrated: (v) => set({ hydrated: v }),
 
-      // ✅ Add helper used by GoogleSuccessPage
+      // Used by Google login
       setTokens: ({ accessToken, refreshToken }) => {
         set({ accessToken, refreshToken });
         api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
@@ -31,25 +32,37 @@ export const useAuthStore = create(
       },
 
       login: async (email, password) => {
-        const { data } = await api.post("/api/auth/login", { email, password });
+        try {
+          const { data } = await api.post("/api/auth/login", {
+            email,
+            password,
+          });
 
-        const token = data?.access || data?.accessToken || data?.token || null;
+          const token =
+            data?.access || data?.accessToken || data?.token || null;
 
-        if (!token) throw new Error("No token returned from backend");
+          if (!token) throw new Error("Invalid login response");
 
-        set({ accessToken: token, user: data.user ?? null });
-        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+          set({ accessToken: token, user: data.user ?? null });
+          api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        } catch (err) {
+          const msg =
+            err.response?.data?.message ||
+            err.response?.data?.error ||
+            "Invalid email or password";
+
+          throw new Error(msg);
+        }
       },
 
       register: async (payload) => {
         await api.post("/api/auth/register", payload);
       },
 
-      // ✅ Used after Google OAuth redirect
       fetchUserProfile: async () => {
         const { data } = await api.get("/api/auth/me");
-        set({ user: data });
-        return data;
+        set({ user: data.user }); // FIXED: data.user
+        return data.user;
       },
 
       logout: async () => {
@@ -62,7 +75,17 @@ export const useAuthStore = create(
     }),
     {
       name: "smartschool-auth",
-      onRehydrateStorage: () => (state) => state?.setHydrated?.(true),
+
+      // ⭐ CRITICAL FIX ⭐
+      // Restore Authorization header on page reload
+      onRehydrateStorage: () => (state) => {
+        if (state?.accessToken) {
+          api.defaults.headers.common[
+            "Authorization"
+          ] = `Bearer ${state.accessToken}`;
+        }
+        state?.setHydrated?.(true);
+      },
     }
   )
 );
