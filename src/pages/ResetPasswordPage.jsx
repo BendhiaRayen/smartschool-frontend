@@ -1,6 +1,13 @@
 import { useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import AuthShell from "../components/AuthShell";
 import api from "../api/axios";
+
+const inputClass =
+  "w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder-white/40 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/40 outline-none";
+
+const primaryBtn =
+  "w-full rounded-2xl bg-gradient-to-r from-brand-accent to-brand-secondary px-4 py-3 font-semibold text-brand-dark shadow-glow transition hover:translate-y-0.5 disabled:opacity-60";
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -30,42 +37,34 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0b1020] via-[#101830] to-[#141c40] text-white px-6">
-      <form
-        onSubmit={handleReset}
-        className="bg-[#11162a]/80 p-8 rounded-3xl border border-white/10 shadow-xl w-full max-w-md"
-      >
-        <h1 className="text-2xl font-semibold mb-4 text-center">
-          Reset your password 🔒
-        </h1>
-
+    <AuthShell
+      title="Reset your SmartSchool password"
+      description="Keep your workspace secure by choosing a unique phrase—this protects every student and project tied to your account."
+      bullets={[
+        "Need at least 8 characters with letters and numbers.",
+        "You’ll be redirected to sign in with the new password.",
+      ]}
+    >
+      <form onSubmit={handleReset} className="space-y-4">
         {message && (
-          <div
-            className={`text-center mb-3 ${
-              message.includes("success") ? "text-green-400" : "text-red-400"
-            }`}
-          >
+          <div className="rounded-2xl border border-brand-secondary/30 bg-brand-secondary/10 p-3 text-sm text-brand-secondary">
             {message}
           </div>
         )}
 
-        <label className="text-sm text-gray-400">New Password</label>
+        <label className="text-sm text-white/60">New password</label>
         <input
           type="password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           required
-          className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2 mt-1 outline-none focus:ring-2 focus:ring-blue-600"
+          className={inputClass}
         />
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 rounded-xl py-2 mt-5 font-semibold"
-        >
-          {loading ? "Updating..." : "Update Password"}
+        <button type="submit" disabled={loading} className={primaryBtn}>
+          {loading ? "Updating..." : "Update password"}
         </button>
       </form>
-    </div>
+    </AuthShell>
   );
 }

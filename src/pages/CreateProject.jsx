@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import api from "../api/axios";
-import Navbar from "../components/Navbar";
 import { useNavigate } from "react-router-dom";
+import PageContainer from "../components/PageContainer";
+import api from "../api/axios";
+
+const inputClass =
+  "w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/40 outline-none";
 
 export default function CreateProject() {
   const navigate = useNavigate();
-
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -16,7 +17,6 @@ export default function CreateProject() {
     studentIds: [],
   });
 
-  // Load all students
   useEffect(() => {
     const loadStudents = async () => {
       try {
@@ -43,7 +43,6 @@ export default function CreateProject() {
 
   const createProject = async (e) => {
     e.preventDefault();
-
     try {
       await api.post("/api/projects", form);
       navigate("/teacher/projects");
@@ -53,85 +52,97 @@ export default function CreateProject() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0b1020] via-[#101830] to-[#141c40] text-white">
-      <Navbar />
-
-      <div className="pt-28 px-6 max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-6">Create New Project</h1>
+    <PageContainer>
+      <div className="space-y-10">
+        <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-brand-dark to-brand-surface p-8 shadow-2xl shadow-black/40">
+          <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
+            New initiative
+          </p>
+          <h1 className="mt-4 text-4xl font-semibold text-white">
+            Create a project
+          </h1>
+          <p className="mt-3 text-white/70">
+            Define your brief, add a deadline, and select the students who will
+            participate. Everyone receives updates instantly.
+          </p>
+        </div>
 
         <form
           onSubmit={createProject}
-          className="bg-white/10 p-6 rounded-2xl border border-white/10 space-y-6"
+          className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-lg shadow-black/30 space-y-6"
         >
           <div>
-            <label className="text-sm text-gray-400">Project Title</label>
+            <label className="text-sm text-white/60">Project title</label>
             <input
               type="text"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               required
-              className="w-full mt-1 px-4 py-2 rounded-xl bg-black/30 border border-white/10 focus:ring-2 focus:ring-blue-600"
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label className="text-sm text-gray-400">Description</label>
+            <label className="text-sm text-white/60">Description</label>
             <textarea
               rows={3}
               value={form.description}
               onChange={(e) =>
                 setForm({ ...form, description: e.target.value })
               }
-              className="w-full mt-1 px-4 py-2 rounded-xl bg-black/30 border border-white/10 focus:ring-2 focus:ring-blue-600"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
           <div>
-            <label className="text-sm text-gray-400">Deadline</label>
+            <label className="text-sm text-white/60">Deadline</label>
             <input
               type="date"
               value={form.deadline}
               onChange={(e) => setForm({ ...form, deadline: e.target.value })}
               required
-              className="w-full mt-1 px-4 py-2 rounded-xl bg-black/30 border border-white/10 focus:ring-2 focus:ring-blue-600"
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label className="text-sm text-gray-400">Assign Students</label>
-
+            <label className="text-sm text-white/60">Assign students</label>
             {loading ? (
-              <p className="text-gray-400 mt-2">Loading students...</p>
+              <p className="mt-3 text-white/70">Loading students...</p>
             ) : (
-              <div className="grid grid-cols-2 gap-3 mt-2">
-                {students.map((s) => (
-                  <div
-                    key={s.id}
-                    onClick={() => toggleStudent(s.id)}
-                    className={`p-3 rounded-xl border cursor-pointer transition ${
-                      form.studentIds.includes(s.id)
-                        ? "bg-blue-600 border-blue-400"
-                        : "bg-white/10 border-white/10 hover:bg-white/20"
-                    }`}
-                  >
-                    <p className="font-medium">
-                      {s.profile?.firstName} {s.profile?.lastName}
-                    </p>
-                    <p className="text-sm text-gray-300">{s.email}</p>
-                  </div>
-                ))}
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                {students.map((s) => {
+                  const selected = form.studentIds.includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => toggleStudent(s.id)}
+                      className={`rounded-2xl border px-4 py-3 text-left transition ${
+                        selected
+                          ? "border-brand-secondary/60 bg-brand-secondary/20 text-white"
+                          : "border-white/10 bg-white/5 text-white/70 hover:border-white/30 hover:text-white"
+                      }`}
+                    >
+                      <span className="block font-semibold">
+                        {s.profile?.firstName} {s.profile?.lastName}
+                      </span>
+                      <span className="text-xs text-white/60">{s.email}</span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
 
           <button
             type="submit"
-            className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-xl font-semibold"
+            className="w-full rounded-2xl bg-gradient-to-r from-brand-accent to-brand-secondary px-4 py-3 font-semibold text-brand-dark shadow-glow transition hover:translate-y-0.5"
           >
-            Create Project
+            Create project
           </button>
         </form>
       </div>
-    </div>
+    </PageContainer>
   );
 }

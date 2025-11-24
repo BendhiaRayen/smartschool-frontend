@@ -1,22 +1,25 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import PageContainer from "../components/PageContainer";
 import api from "../api/axios";
-import Navbar from "../components/Navbar";
+
+const inputClass =
+  "w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/40 outline-none";
+
+const statusButtons = ["TODO", "IN_PROGRESS", "DONE"];
 
 export default function TeacherProjectDetails() {
-  const { id } = useParams(); // project ID
+  const { id } = useParams();
 
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [students, setStudents] = useState([]);
   const [taskForm, setTaskForm] = useState({
     title: "",
     description: "",
     deadline: "",
     assignedTo: "",
   });
-
-  const [students, setStudents] = useState([]);
 
   const loadProject = async () => {
     try {
@@ -30,8 +33,12 @@ export default function TeacherProjectDetails() {
   };
 
   const loadStudents = async () => {
-    const { data } = await api.get("/api/users/students");
-    setStudents(data);
+    try {
+      const { data } = await api.get("/api/users/students");
+      setStudents(data);
+    } catch (err) {
+      console.error("Error loading students:", err);
+    }
   };
 
   useEffect(() => {
@@ -41,7 +48,6 @@ export default function TeacherProjectDetails() {
 
   const addTask = async (e) => {
     e.preventDefault();
-
     try {
       await api.post("/api/tasks", {
         projectId: Number(id),
@@ -82,195 +88,202 @@ export default function TeacherProjectDetails() {
     }
   };
 
-  if (loading || !project)
+  if (loading || !project) {
     return (
-      <div className="min-h-screen bg-[#0b1020] text-white p-10">
-        Loading project...
-      </div>
+      <PageContainer>
+        <p className="text-white/70">Loading project...</p>
+      </PageContainer>
     );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0b1020] via-[#101830] to-[#141c40] text-white">
-      <Navbar />
-
-      <div className="pt-28 px-6 max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold mb-4">{project.title}</h1>
-        <p className="text-gray-300 mb-4">{project.description}</p>
-
-        {project.deadline && (
-          <p className="text-red-400 mb-8">
-            Deadline: {new Date(project.deadline).toLocaleDateString()}
+    <PageContainer>
+      <div className="space-y-10">
+        <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-brand-dark to-brand-surface p-8 shadow-2xl shadow-black/40">
+          <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
+            Project overview
           </p>
-        )}
-
-        {/* Students Section */}
-        <div className="bg-white/10 p-6 rounded-2xl mb-10 border border-white/10">
-          <h2 className="text-2xl font-semibold mb-4">Assigned Students</h2>
-
-          {project.students.length === 0 ? (
-            <p className="text-gray-400">No students assigned yet.</p>
-          ) : (
-            <ul className="space-y-3">
-              {project.students.map((ps) => (
-                <li
-                  key={ps.id}
-                  className="bg-white/10 p-3 rounded-xl border border-white/10"
-                >
-                  {ps.student.profile?.firstName} {ps.student.profile?.lastName}
-                  <span className="text-gray-300 text-sm">
-                    {" "}
-                    - {ps.student.email}
-                  </span>
-                </li>
-              ))}
-            </ul>
+          <h1 className="mt-4 text-4xl font-semibold text-white">{project.title}</h1>
+          <p className="mt-3 text-white/70">{project.description}</p>
+          {project.deadline && (
+            <span className="mt-5 inline-flex rounded-full border border-white/10 px-4 py-2 text-xs text-white/60">
+              Deadline: {new Date(project.deadline).toLocaleDateString()}
+            </span>
           )}
+        </div>
 
-          <h3 className="text-xl mt-8 mb-2 font-semibold">Add Student</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {students.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => addStudent(s.id)}
-                className="bg-blue-600 hover:bg-blue-700 p-2 rounded-lg"
-              >
-                {s.profile?.firstName} {s.profile?.lastName}
-              </button>
-            ))}
+        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-black/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
+                  Cohort
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-white">
+                  Assigned students
+                </h2>
+              </div>
+            </div>
+
+            {project.students.length === 0 ? (
+              <p className="mt-6 text-white/60">No students assigned yet.</p>
+            ) : (
+              <ul className="mt-6 space-y-3">
+                {project.students.map((ps) => (
+                  <li
+                    key={ps.id}
+                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80"
+                  >
+                    {ps.student.profile?.firstName} {ps.student.profile?.lastName}
+                    <span className="text-white/50"> · {ps.student.email}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <h3 className="mt-8 text-lg font-semibold text-white">Add student</h3>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+              {students
+                .filter((s) => !project.students.some((ps) => ps.studentId === s.id))
+                .map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => addStudent(s.id)}
+                    className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-left text-white/80 transition hover:border-brand-secondary/40 hover:text-white"
+                  >
+                    <span className="block font-semibold">
+                      {s.profile?.firstName} {s.profile?.lastName}
+                    </span>
+                    <span className="text-xs text-white/50">{s.email}</span>
+                  </button>
+                ))}
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-black/30">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
+                    Taskboard
+                  </p>
+                  <h2 className="mt-2 text-2xl font-semibold text-white">Tasks</h2>
+                </div>
+              </div>
+
+              {project.tasks.length === 0 ? (
+                <p className="mt-6 text-white/60">No tasks yet.</p>
+              ) : (
+                <div className="mt-6 space-y-4">
+                  {project.tasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">
+                            {task.title}
+                          </h3>
+                          <p className="text-sm text-white/60">
+                            {task.description}
+                          </p>
+                        </div>
+                        {task.deadline && (
+                          <span className="text-xs uppercase tracking-wide text-white/60">
+                            {new Date(task.deadline).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="mt-3 text-sm text-white/70">
+                        Assigned to:{" "}
+                        <span className="text-brand-secondary">
+                          {task.student
+                            ? `${task.student.profile?.firstName} ${task.student.profile?.lastName}`
+                            : "Unassigned"}
+                        </span>
+                      </p>
+
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        {statusButtons.map((status) => (
+                          <button
+                            key={status}
+                            onClick={() => updateTaskStatus(task.id, status)}
+                            className={`rounded-2xl px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
+                              task.status === status
+                                ? "bg-gradient-to-r from-brand-accent to-brand-secondary text-brand-dark shadow-glow"
+                                : "border border-white/15 text-white/70 hover:border-white/40"
+                            }`}
+                          >
+                            {status.replace("_", " ")}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-brand-dark/70 p-6 shadow-inner shadow-black/50">
+              <h3 className="text-xl font-semibold text-white">Add task</h3>
+              <form onSubmit={addTask} className="mt-4 space-y-4">
+                <input
+                  type="text"
+                  placeholder="Task title"
+                  value={taskForm.title}
+                  onChange={(e) =>
+                    setTaskForm({ ...taskForm, title: e.target.value })
+                  }
+                  required
+                  className={inputClass}
+                />
+                <textarea
+                  placeholder="Task description"
+                  rows={3}
+                  value={taskForm.description}
+                  onChange={(e) =>
+                    setTaskForm({ ...taskForm, description: e.target.value })
+                  }
+                  className={`${inputClass} resize-none`}
+                />
+                <input
+                  type="date"
+                  value={taskForm.deadline}
+                  onChange={(e) =>
+                    setTaskForm({ ...taskForm, deadline: e.target.value })
+                  }
+                  className={inputClass}
+                />
+                <select
+                  value={taskForm.assignedTo}
+                  onChange={(e) =>
+                    setTaskForm({
+                      ...taskForm,
+                      assignedTo: e.target.value ? Number(e.target.value) : "",
+                    })
+                  }
+                  className={inputClass}
+                >
+                  <option value="">Unassigned</option>
+                  {project.students.map((ps) => (
+                    <option key={ps.id} value={ps.studentId}>
+                      {ps.student.profile?.firstName} {ps.student.profile?.lastName}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="submit"
+                  className="w-full rounded-2xl bg-gradient-to-r from-brand-accent to-brand-secondary px-4 py-3 font-semibold text-brand-dark shadow-glow transition hover:translate-y-0.5"
+                >
+                  Add task
+                </button>
+              </form>
+            </div>
           </div>
         </div>
-
-        {/* Tasks Section */}
-        <div className="bg-white/10 p-6 rounded-2xl border border-white/10">
-          <h2 className="text-2xl font-semibold mb-4">Tasks</h2>
-
-          {project.tasks.length === 0 ? (
-            <p className="text-gray-400">No tasks yet.</p>
-          ) : (
-            <div className="space-y-4">
-              {project.tasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="bg-white/10 p-4 rounded-xl border border-white/10"
-                >
-                  <h3 className="text-lg font-semibold">{task.title}</h3>
-
-                  <p className="text-gray-400 mb-2">{task.description}</p>
-
-                  {task.deadline && (
-                    <p className="text-sm text-red-400">
-                      Deadline: {new Date(task.deadline).toLocaleDateString()}
-                    </p>
-                  )}
-
-                  <p className="text-sm text-gray-300 mt-1">
-                    Assigned to:{" "}
-                    <span className="text-blue-400">
-                      {task.student
-                        ? `${task.student.profile?.firstName} ${task.student.profile?.lastName}`
-                        : "None"}
-                    </span>
-                  </p>
-
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={() => updateTaskStatus(task.id, "TODO")}
-                      className={`px-3 py-1 rounded-lg text-sm ${
-                        task.status === "TODO"
-                          ? "bg-blue-600"
-                          : "bg-white/20 hover:bg-white/30"
-                      }`}
-                    >
-                      TODO
-                    </button>
-                    <button
-                      onClick={() => updateTaskStatus(task.id, "IN_PROGRESS")}
-                      className={`px-3 py-1 rounded-lg text-sm ${
-                        task.status === "IN_PROGRESS"
-                          ? "bg-yellow-500"
-                          : "bg-white/20 hover:bg-white/30"
-                      }`}
-                    >
-                      IN PROGRESS
-                    </button>
-                    <button
-                      onClick={() => updateTaskStatus(task.id, "DONE")}
-                      className={`px-3 py-1 rounded-lg text-sm ${
-                        task.status === "DONE"
-                          ? "bg-green-600"
-                          : "bg-white/20 hover:bg-white/30"
-                      }`}
-                    >
-                      DONE
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Add Task Form */}
-          <h3 className="text-xl font-semibold mt-8 mb-3">Add Task</h3>
-
-          <form onSubmit={addTask} className="space-y-4">
-            <input
-              type="text"
-              placeholder="Task title"
-              value={taskForm.title}
-              onChange={(e) =>
-                setTaskForm({ ...taskForm, title: e.target.value })
-              }
-              required
-              className="w-full px-4 py-2 rounded-xl bg-black/30 border border-white/10"
-            />
-
-            <textarea
-              placeholder="Task description"
-              rows={2}
-              value={taskForm.description}
-              onChange={(e) =>
-                setTaskForm({ ...taskForm, description: e.target.value })
-              }
-              className="w-full px-4 py-2 rounded-xl bg-black/30 border border-white/10"
-            />
-
-            <input
-              type="date"
-              value={taskForm.deadline}
-              onChange={(e) =>
-                setTaskForm({ ...taskForm, deadline: e.target.value })
-              }
-              className="w-full px-4 py-2 rounded-xl bg-black/30 border border-white/10"
-            />
-
-            {/* FIXED: Convert assignedTo to number */}
-            <select
-              value={taskForm.assignedTo}
-              onChange={(e) =>
-                setTaskForm({
-                  ...taskForm,
-                  assignedTo: Number(e.target.value),
-                })
-              }
-              className="w-full px-4 py-2 rounded-xl bg-black/30 border border-white/10"
-            >
-              <option value="">Unassigned</option>
-              {project.students.map((ps) => (
-                <option key={ps.id} value={ps.studentId}>
-                  {ps.student.profile?.firstName} {ps.student.profile?.lastName}
-                </option>
-              ))}
-            </select>
-
-            <button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-xl"
-            >
-              Add Task
-            </button>
-          </form>
-        </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

@@ -1,7 +1,14 @@
 import { useState } from "react";
-import { useAuthStore } from "../store/auth";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import api from "../api/axios";
+import AuthShell from "../components/AuthShell";
+import { useAuthStore } from "../store/auth";
+
+const inputClass =
+  "w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder-white/40 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/40 outline-none";
+
+const primaryBtn =
+  "w-full rounded-2xl bg-gradient-to-r from-brand-accent to-brand-secondary px-4 py-3 font-semibold text-brand-dark shadow-glow transition hover:translate-y-0.5 disabled:opacity-60";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -15,13 +22,11 @@ export default function LoginPage() {
   const [resetEmail, setResetEmail] = useState("");
   const [resetSent, setResetSent] = useState(false);
 
-  // For reset link form (from email)
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
   const [newPassword, setNewPassword] = useState("");
   const [resetSuccess, setResetSuccess] = useState(false);
 
-  // 🔹 Regular Login
   const onSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -29,12 +34,8 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-
-      const state = useAuthStore.getState();
-      const user = state?.user;
-
+      const user = useAuthStore.getState()?.user;
       if (!user) throw new Error("Invalid user data");
-
       if (user.role === "ADMIN") navigate("/admin-dashboard");
       else navigate("/dashboard");
     } catch (err) {
@@ -44,7 +45,6 @@ export default function LoginPage() {
     }
   };
 
-  // 🔹 Request password reset
   const handleRequestReset = async (e) => {
     e.preventDefault();
     try {
@@ -57,7 +57,6 @@ export default function LoginPage() {
     }
   };
 
-  // 🔹 Handle password reset form (when token is present)
   const handleResetPassword = async (e) => {
     e.preventDefault();
     try {
@@ -69,179 +68,166 @@ export default function LoginPage() {
     }
   };
 
-  // 🔹 If user came from the email link
   if (token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0b1020] via-[#101830] to-[#141c40] text-white px-6">
-        <form
-          onSubmit={handleResetPassword}
-          className="bg-[#11162a]/80 p-8 rounded-3xl border border-white/10 shadow-xl w-full max-w-md"
-        >
-          <h1 className="text-2xl font-semibold mb-4 text-center">
-            Reset your password 🔒
-          </h1>
-          {resetSuccess ? (
-            <p className="text-green-400 text-center">
-              Password updated! Redirecting...
-            </p>
-          ) : (
-            <>
-              <label className="text-sm text-gray-400">New Password</label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2 mt-1 outline-none focus:ring-2 focus:ring-blue-600"
-              />
-              <button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 rounded-xl py-2 mt-5 font-semibold"
-              >
-                Update Password
-              </button>
-            </>
-          )}
-        </form>
-      </div>
+      <AuthShell
+        title="Set a fresh password."
+        description="You followed a secure link. Choose a new password and we’ll get you back into your projects."
+        bullets={[
+          "The link expires after one use.",
+          "Strong passwords keep family and student data safe.",
+        ]}
+      >
+        {resetSuccess ? (
+          <p className="text-center text-brand-secondary">
+            Password updated! Redirecting...
+          </p>
+        ) : (
+          <form onSubmit={handleResetPassword} className="space-y-4">
+            <label className="text-sm text-white/60">New password</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              className={inputClass}
+            />
+            <button type="submit" className={primaryBtn}>
+              Update password
+            </button>
+          </form>
+        )}
+      </AuthShell>
     );
   }
 
-  // 🔹 Forgot password form
-  if (resetMode)
+  if (resetMode) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0b1020] via-[#101830] to-[#141c40] text-white px-6">
-        <form
-          onSubmit={handleRequestReset}
-          className="bg-[#11162a]/80 p-8 rounded-3xl border border-white/10 shadow-xl w-full max-w-md"
-        >
-          <h1 className="text-2xl font-semibold mb-4 text-center">
-            Forgot your password? 🔑
-          </h1>
-
+      <AuthShell
+        title="Need a reset link?"
+        description="Enter the email tied to SmartSchool and we’ll send a one-tap recovery link."
+        bullets={[
+          "Links stay active for 15 minutes.",
+          "Check spam if it doesn’t arrive immediately.",
+        ]}
+      >
+        <form onSubmit={handleRequestReset} className="space-y-4">
           {resetSent ? (
-            <p className="text-green-400 text-center">
-              ✅ Verification email sent! Check your inbox.
+            <p className="rounded-2xl border border-brand-secondary/30 bg-brand-secondary/10 p-3 text-sm text-brand-secondary">
+              Verification email sent! Check your inbox.
             </p>
           ) : (
             <>
-              <label className="text-sm text-gray-400">Email</label>
+              <label className="text-sm text-white/60">Email</label>
               <input
                 type="email"
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
                 required
-                className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2 mt-1 outline-none focus:ring-2 focus:ring-blue-600"
+                className={inputClass}
               />
-              <button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 rounded-xl py-2 mt-5 font-semibold"
-              >
-                Send Reset Link
+              <button type="submit" className={primaryBtn}>
+                Send reset link
               </button>
             </>
           )}
 
-          <p className="mt-4 text-center text-sm text-gray-400">
-            <button
-              type="button"
-              onClick={() => setResetMode(false)}
-              className="text-blue-400 hover:underline"
-            >
-              Back to login
-            </button>
-          </p>
+          <button
+            type="button"
+            onClick={() => setResetMode(false)}
+            className="w-full rounded-2xl border border-white/10 px-4 py-3 text-sm text-white/80 transition hover:border-white/40 hover:text-white"
+          >
+            Back to login
+          </button>
         </form>
-      </div>
+      </AuthShell>
     );
+  }
 
-  // 🔹 Default login form
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0b1020] via-[#101830] to-[#141c40] flex items-center justify-center px-6 text-white">
-      <form
-        onSubmit={onSubmit}
-        className="w-full max-w-md bg-[#11162a]/80 backdrop-blur-lg p-8 rounded-3xl border border-white/10 shadow-2xl"
-      >
-        <h1 className="text-3xl font-semibold mb-6 text-center">Hi!!!! 👋</h1>
-
+    <AuthShell
+      title="Welcome back. Let’s sync your learning universe."
+      description="Sign in to orchestrate projects, track outcomes, and keep every stakeholder aligned."
+      bullets={[
+        "SSO via Google keeps things fast and secure.",
+        "Switch roles seamlessly if you teach and learn.",
+      ]}
+    >
+      <form onSubmit={onSubmit} className="space-y-5">
         {error && (
-          <div className="text-red-400 bg-red-900/20 border border-red-400/20 rounded-lg p-2 text-sm mb-3 text-center">
+          <div className="rounded-2xl border border-red-400/40 bg-red-500/10 p-3 text-sm text-red-200">
             {error}
           </div>
         )}
 
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm text-gray-400">Email</label>
+        <div>
+          <label className="text-sm text-white/60">Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className={inputClass}
+          />
+        </div>
+
+        <div>
+          <label className="text-sm text-white/60">Password</label>
+          <div className="relative mt-1">
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type={showPw ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2 mt-1 outline-none focus:ring-2 focus:ring-blue-600"
+              className={`${inputClass} pr-20`}
             />
-          </div>
-          <div>
-            <label className="text-sm text-gray-400">Password</label>
-            <div className="relative mt-1">
-              <input
-                type={showPw ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-blue-600 pr-20"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw(!showPw)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-white"
-              >
-                {showPw ? "Hide" : "Show"}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowPw(!showPw)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/60 hover:text-white"
+            >
+              {showPw ? "Hide" : "Show"}
+            </button>
           </div>
         </div>
 
-        <button
-          disabled={loading}
-          className="mt-6 w-full bg-blue-600 hover:bg-blue-700 transition rounded-xl py-2 font-semibold shadow-lg"
-        >
+        <button disabled={loading} className={primaryBtn}>
           {loading ? "Signing in..." : "Sign in"}
         </button>
 
-        <p className="mt-4 text-center text-sm text-gray-400">
+        <div className="flex flex-wrap items-center justify-between text-sm text-white/70">
           <button
             type="button"
             onClick={() => setResetMode(true)}
-            className="text-blue-400 hover:underline"
+            className="text-brand-secondary hover:text-white"
           >
             Forgot password?
           </button>
-        </p>
+          <p>
+            No account?{" "}
+            <Link to="/register" className="text-brand-secondary hover:text-white">
+              Create one
+            </Link>
+          </p>
+        </div>
 
-        <p className="mt-2 text-center text-sm text-gray-400">
-          No account?{" "}
-          <Link to="/register" className="text-blue-400 hover:underline">
-            Create one
-          </Link>
-        </p>
-        <div className="mt-6 text-center">
+        <div className="pt-4">
           <button
             type="button"
             onClick={() =>
               (window.location.href = "http://localhost:4000/api/auth/google")
             }
-            className="flex items-center justify-center gap-2 w-full bg-white text-black py-2 rounded-xl hover:bg-gray-200 transition"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white px-4 py-3 font-medium text-brand-dark transition hover:-translate-y-0.5"
           >
             <img
               src="https://developers.google.com/identity/images/g-logo.png"
               alt="Google"
-              className="w-5 h-5"
+              className="h-5 w-5"
             />
             Continue with Google
           </button>
         </div>
       </form>
-    </div>
+    </AuthShell>
   );
 }

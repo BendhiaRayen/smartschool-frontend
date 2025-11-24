@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import api from "../api/axios";
-import Navbar from "../components/Navbar";
+import PageContainer from "../components/PageContainer";
 import { useAuthStore } from "../store/auth";
+
+const inputClass =
+  "w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/40 outline-none disabled:border-white/5 disabled:text-white/40";
 
 export default function ProfilePage() {
   const { user } = useAuthStore();
@@ -23,14 +26,11 @@ export default function ProfilePage() {
   useEffect(() => {
     const load = async () => {
       try {
-        // 🔹 Fetch user first to get provider (LOCAL/GOOGLE)
         const userData = await api.get("/api/auth/me");
         useAuthStore.setState({ user: userData.data.user });
 
-        // 🔹 Then fetch the profile
         const { data } = await api.get("/api/profile/me");
         setProfile(data.profile);
-
         setForm({
           firstName: data.profile?.firstName || "",
           lastName: data.profile?.lastName || "",
@@ -50,12 +50,13 @@ export default function ProfilePage() {
     setLoading(true);
     try {
       const { data } = await api.patch("/api/profile/me", form);
-      setProfile(data);
+      const updated = data?.profile ?? data;
+      setProfile(updated);
       setForm({
-        firstName: data.firstName || "",
-        lastName: data.lastName || "",
-        phone: data.phone || "",
-        bio: data.bio || "",
+        firstName: updated?.firstName || "",
+        lastName: updated?.lastName || "",
+        phone: updated?.phone || "",
+        bio: updated?.bio || "",
       });
       setEditing(false);
     } catch (err) {
@@ -65,187 +66,237 @@ export default function ProfilePage() {
     }
   };
 
-  if (!profile)
+  if (!profile) {
     return (
-      <div className="text-center mt-20 text-gray-400">Loading profile...</div>
+      <PageContainer>
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-10 text-center text-white/70">
+          Loading profile...
+        </div>
+      </PageContainer>
     );
+  }
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] text-white">
-      <Navbar />
-      <div className="max-w-2xl mx-auto mt-24 bg-white/10 p-6 rounded-2xl shadow-lg border border-white/10">
-        <h1 className="text-3xl font-semibold mb-6">My Profile</h1>
+    <PageContainer>
+      <div className="space-y-12">
+        <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-brand-dark to-brand-surface p-8 shadow-2xl shadow-black/40">
+          <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
+            Identity
+          </p>
+          <h1 className="mt-4 text-3xl font-semibold text-white">
+            Keep your SmartSchool profile in sync.
+          </h1>
+          <p className="mt-3 text-white/70">
+            Update contact details, craft a short bio, and control password
+            settings so teams always know who’s behind the work.
+          </p>
+        </div>
 
-        {/* 🔹 Profile Form */}
-        <form onSubmit={handleUpdate} className="space-y-5">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-gray-400">First Name</label>
-              <input
-                type="text"
-                value={form.firstName}
-                disabled={!editing}
-                onChange={(e) =>
-                  setForm({ ...form, firstName: e.target.value })
-                }
-                className={`w-full rounded-xl px-4 py-2 mt-1 bg-black/30 border ${
-                  editing
-                    ? "border-blue-500 focus:ring-2 focus:ring-blue-600"
-                    : "border-white/10 text-gray-400"
-                } outline-none`}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm text-gray-400">Last Name</label>
-              <input
-                type="text"
-                value={form.lastName}
-                disabled={!editing}
-                onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                className={`w-full rounded-xl px-4 py-2 mt-1 bg-black/30 border ${
-                  editing
-                    ? "border-blue-500 focus:ring-2 focus:ring-blue-600"
-                    : "border-white/10 text-gray-400"
-                } outline-none`}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm text-gray-400">Phone</label>
-            <input
-              type="text"
-              value={form.phone}
-              disabled={!editing}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className={`w-full rounded-xl px-4 py-2 mt-1 bg-black/30 border ${
-                editing
-                  ? "border-blue-500 focus:ring-2 focus:ring-blue-600"
-                  : "border-white/10 text-gray-400"
-              } outline-none`}
-            />
-          </div>
-
-          <div>
-            <label className="text-sm text-gray-400">Bio</label>
-            <textarea
-              rows={3}
-              value={form.bio}
-              disabled={!editing}
-              onChange={(e) => setForm({ ...form, bio: e.target.value })}
-              className={`w-full rounded-xl px-4 py-2 mt-1 bg-black/30 border ${
-                editing
-                  ? "border-blue-500 focus:ring-2 focus:ring-blue-600"
-                  : "border-white/10 text-gray-400"
-              } outline-none resize-none`}
-            />
-          </div>
-
-          <div className="flex justify-end gap-4 mt-6">
-            {!editing ? (
+        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+          <form
+            onSubmit={handleUpdate}
+            className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-lg shadow-black/30"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
+                  Profile details
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-white">
+                  Personal info
+                </h2>
+              </div>
               <button
                 type="button"
-                onClick={() => setEditing(true)}
-                className="px-6 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 transition"
+                onClick={() => setEditing((prev) => !prev)}
+                className="rounded-2xl border border-white/15 px-4 py-2 text-sm text-white/80 transition hover:border-white/40 hover:text-white"
               >
-                Edit Profile
+                {editing ? "Lock fields" : "Edit fields"}
               </button>
-            ) : (
-              <>
+            </div>
+
+            <div className="mt-6 space-y-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="text-sm text-white/60">First name</label>
+                  <input
+                    type="text"
+                    value={form.firstName}
+                    disabled={!editing}
+                    onChange={(e) =>
+                      setForm({ ...form, firstName: e.target.value })
+                    }
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-white/60">Last name</label>
+                  <input
+                    type="text"
+                    value={form.lastName}
+                    disabled={!editing}
+                    onChange={(e) =>
+                      setForm({ ...form, lastName: e.target.value })
+                    }
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm text-white/60">Phone</label>
+                <input
+                  type="text"
+                  value={form.phone}
+                  disabled={!editing}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-white/60">Bio</label>
+                <textarea
+                  rows={4}
+                  value={form.bio}
+                  disabled={!editing}
+                  onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                  className={`${inputClass} resize-none`}
+                />
+              </div>
+            </div>
+
+            <div className="mt-8 flex flex-wrap justify-end gap-3">
+              {editing && (
                 <button
                   type="button"
-                  onClick={() => setEditing(false)}
-                  className="px-6 py-2 rounded-xl bg-gray-500/30 hover:bg-gray-600/30 transition"
+                  onClick={() => {
+                    setEditing(false);
+                    setForm({
+                      firstName: profile?.firstName || "",
+                      lastName: profile?.lastName || "",
+                      phone: profile?.phone || "",
+                      bio: profile?.bio || "",
+                    });
+                  }}
+                  className="rounded-2xl border border-white/10 px-5 py-2 text-sm text-white/70 transition hover:border-white/30 hover:text-white"
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-6 py-2 rounded-xl bg-green-600 hover:bg-green-700 transition disabled:opacity-50"
-                >
-                  {loading ? "Saving..." : "Save Changes"}
-                </button>
-              </>
-            )}
-          </div>
-        </form>
-
-        {/* 🔹 Change Password Section */}
-        <hr className="my-10 border-gray-700" />
-
-        {!isGoogleUser ? (
-          <>
-            <h2 className="text-2xl font-semibold mb-4">Change Password</h2>
-            <p className="text-gray-400 mb-6">
-              Enter your current password and a new password to update it
-              securely.
-            </p>
-
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!currentPassword || !newPassword) {
-                  alert("Please fill in both fields.");
-                  return;
-                }
-                try {
-                  const { data } = await api.post("/api/auth/change-password", {
-                    currentPassword,
-                    newPassword,
-                  });
-                  alert(data.message || "Password updated successfully!");
-                  setCurrentPassword("");
-                  setNewPassword("");
-                } catch (err) {
-                  alert(
-                    err.response?.data?.message || "Error updating password"
-                  );
-                }
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="text-sm text-gray-400">
-                  Current Password
-                </label>
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2 mt-1 outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="Enter your current password"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-sm text-gray-400">New Password</label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2 mt-1 outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="Enter your new password"
-                  required
-                />
-              </div>
-
+              )}
               <button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-xl mt-4 transition"
+                disabled={!editing || loading}
+                className="rounded-2xl bg-gradient-to-r from-brand-accent to-brand-secondary px-6 py-3 text-sm font-semibold text-brand-dark shadow-glow transition disabled:opacity-50"
               >
-                Update Password
+                {loading ? "Saving..." : "Save changes"}
               </button>
-            </form>
-          </>
-        ) : (
-          <p className="text-gray-400 text-sm italic">
-            You logged in with Google. Password changes are disabled.
-          </p>
-        )}
+            </div>
+          </form>
+
+          <div className="space-y-6">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-black/30">
+              <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
+                Account overview
+              </p>
+              <h3 className="mt-2 text-xl font-semibold text-white">
+                Identity signals
+              </h3>
+              <ul className="mt-4 space-y-3 text-sm text-white/70">
+                <li>
+                  Email: <span className="text-white">{user?.email}</span>
+                </li>
+                <li>
+                  Role:{" "}
+                  <span className="text-brand-secondary">
+                    {user?.role ?? "—"}
+                  </span>
+                </li>
+                <li>
+                  Provider:{" "}
+                  <span className="text-brand-secondary">
+                    {user?.provider || "LOCAL"}
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-brand-dark/70 p-6 shadow-inner shadow-black/50">
+              <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
+                Security
+              </p>
+              <h3 className="mt-2 text-xl font-semibold text-white">
+                Password controls
+              </h3>
+              {isGoogleUser ? (
+                <p className="mt-3 text-sm text-white/60">
+                  You signed in with Google. Manage your password inside Google
+                  Workspace and it will sync here automatically.
+                </p>
+              ) : (
+                <form
+                  className="mt-5 space-y-4"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!currentPassword || !newPassword) {
+                      alert("Please fill in both fields.");
+                      return;
+                    }
+                    try {
+                      const { data } = await api.post(
+                        "/api/auth/change-password",
+                        {
+                          currentPassword,
+                          newPassword,
+                        }
+                      );
+                      alert(data.message || "Password updated successfully!");
+                      setCurrentPassword("");
+                      setNewPassword("");
+                    } catch (err) {
+                      alert(
+                        err.response?.data?.message ||
+                          "Error updating password"
+                      );
+                    }
+                  }}
+                >
+                  <div>
+                    <label className="text-sm text-white/60">
+                      Current password
+                    </label>
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-white/60">
+                      New password
+                    </label>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full rounded-2xl border border-brand-secondary/40 bg-brand-secondary/20 px-4 py-3 text-sm font-semibold text-brand-secondary transition hover:border-brand-secondary hover:bg-brand-secondary/30"
+                  >
+                    Update password
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

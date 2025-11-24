@@ -1,6 +1,13 @@
 import { useState } from "react";
-import { useAuthStore } from "../store/auth";
 import { Link, useNavigate } from "react-router-dom";
+import AuthShell from "../components/AuthShell";
+import { useAuthStore } from "../store/auth";
+
+const inputClass =
+  "w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder-white/40 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/40 outline-none";
+
+const primaryBtn =
+  "w-full rounded-2xl bg-gradient-to-r from-brand-accent to-brand-secondary px-4 py-3 font-semibold text-brand-dark shadow-glow transition hover:translate-y-0.5 disabled:opacity-60";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -13,7 +20,7 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [showPw, setShowPw] = useState(false); // 👈 Added toggle state
+  const [showPw, setShowPw] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,29 +37,30 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0b1020] via-[#101830] to-[#141c40] flex items-center justify-center px-6 text-white">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md bg-[#11162a]/80 backdrop-blur-lg p-8 rounded-3xl border border-white/10 shadow-2xl"
-      >
-        <h1 className="text-3xl font-semibold mb-6 text-center">
-          Create an Account 🚀
-        </h1>
-
+    <AuthShell
+      eyebrow="Join SmartSchool"
+      title="Bring your classroom operations into one orbit."
+      description="Set up your profile, invite collaborators, and unlock a shared workspace for projects, grading, and storytelling."
+      bullets={[
+        "Real-time dashboards for attendance, progress, and nudges.",
+        "Role-aware access for admins, teachers, and students.",
+      ]}
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
-          <div className="text-red-400 bg-red-900/20 border border-red-400/20 rounded-lg p-2 text-sm mb-3 text-center">
+          <div className="rounded-2xl border border-red-400/40 bg-red-500/10 p-3 text-sm text-red-200">
             {error}
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <input
             type="text"
             placeholder="First name"
             value={form.firstName}
             onChange={(e) => setForm({ ...form, firstName: e.target.value })}
             required
-            className="bg-black/30 border border-white/10 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-blue-600"
+            className={inputClass}
           />
           <input
             type="text"
@@ -60,7 +68,7 @@ export default function RegisterPage() {
             value={form.lastName}
             onChange={(e) => setForm({ ...form, lastName: e.target.value })}
             required
-            className="bg-black/30 border border-white/10 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-blue-600"
+            className={inputClass}
           />
         </div>
 
@@ -70,11 +78,10 @@ export default function RegisterPage() {
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           required
-          className="mt-4 w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-blue-600"
+          className={inputClass}
         />
 
-        {/* Password with show/hide toggle */}
-        <div className="mt-4 relative">
+        <div className="relative">
           <input
             type={showPw ? "text" : "password"}
             placeholder="Password"
@@ -82,31 +89,28 @@ export default function RegisterPage() {
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             required
             minLength={8}
-            className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2 pr-20 outline-none focus:ring-2 focus:ring-blue-600"
+            className={`${inputClass} pr-20`}
           />
           <button
             type="button"
             onClick={() => setShowPw(!showPw)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition"
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl bg-white/10 px-3 py-1 text-xs text-white/80 transition hover:bg-white/20"
           >
             {showPw ? "Hide" : "Show"}
           </button>
         </div>
 
-        <button
-          disabled={loading}
-          className="mt-6 w-full bg-blue-600 hover:bg-blue-700 transition rounded-xl py-2 font-semibold shadow-lg disabled:opacity-50"
-        >
-          {loading ? "Creating..." : "Create Account"}
+        <button disabled={loading} className={primaryBtn}>
+          {loading ? "Creating..." : "Create account"}
         </button>
 
-        <p className="mt-4 text-center text-sm text-gray-400">
+        <p className="text-center text-sm text-white/70">
           Already have an account?{" "}
-          <Link to="/login" className="text-blue-400 hover:underline">
+          <Link to="/login" className="text-brand-secondary hover:text-white">
             Sign in
           </Link>
         </p>
       </form>
-    </div>
+    </AuthShell>
   );
 }

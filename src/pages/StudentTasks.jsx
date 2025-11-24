@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import Navbar from "../components/Navbar";
+import PageContainer from "../components/PageContainer";
 import api from "../api/axios";
+
+const statusButtons = ["TODO", "IN_PROGRESS", "DONE"];
 
 export default function StudentTasks() {
   const [tasks, setTasks] = useState([]);
@@ -30,87 +32,72 @@ export default function StudentTasks() {
     load();
   }, []);
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="min-h-screen bg-[#0b1020] text-white p-10">
-        Loading tasks...
-      </div>
+      <PageContainer>
+        <p className="text-white/70">Loading tasks...</p>
+      </PageContainer>
     );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0b1020] via-[#101830] to-[#141c40] text-white">
-      <Navbar />
-
-      <div className="pt-28 px-6 max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">My Tasks</h1>
-
-        {tasks.length === 0 ? (
-          <p className="text-gray-400">You have no assigned tasks yet.</p>
-        ) : (
-          <div className="space-y-6">
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                className="bg-white/10 p-5 rounded-2xl border border-white/10"
-              >
-                <h2 className="text-xl font-semibold">{task.title}</h2>
-
-                <p className="text-gray-300 mt-1">{task.description}</p>
-
-                <p className="mt-2 text-sm text-blue-300">
-                  Project: {task.project?.title}
-                </p>
-
-                {task.deadline && (
-                  <p className="text-sm text-red-400">
-                    Deadline: {new Date(task.deadline).toLocaleDateString()}
-                  </p>
-                )}
-
-                <p className="text-sm mt-2">
-                  Status:{" "}
-                  <span className="text-blue-400 font-bold">{task.status}</span>
-                </p>
-
-                <div className="flex gap-2 mt-4">
-                  <button
-                    onClick={() => updateStatus(task.id, "TODO")}
-                    className={`px-3 py-1 text-sm rounded-lg ${
-                      task.status === "TODO"
-                        ? "bg-blue-600"
-                        : "bg-white/20 hover:bg-white/30"
-                    }`}
-                  >
-                    TODO
-                  </button>
-
-                  <button
-                    onClick={() => updateStatus(task.id, "IN_PROGRESS")}
-                    className={`px-3 py-1 text-sm rounded-lg ${
-                      task.status === "IN_PROGRESS"
-                        ? "bg-yellow-500"
-                        : "bg-white/20 hover:bg-white/30"
-                    }`}
-                  >
-                    IN PROGRESS
-                  </button>
-
-                  <button
-                    onClick={() => updateStatus(task.id, "DONE")}
-                    className={`px-3 py-1 text-sm rounded-lg ${
-                      task.status === "DONE"
-                        ? "bg-green-600"
-                        : "bg-white/20 hover:bg-white/30"
-                    }`}
-                  >
-                    DONE
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+    <PageContainer>
+      <div className="space-y-4">
+        <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
+          Task stream
+        </p>
+        <h1 className="text-3xl font-semibold text-white">My tasks</h1>
       </div>
-    </div>
+
+      {tasks.length === 0 ? (
+        <div className="mt-10 rounded-3xl border border-dashed border-white/20 bg-white/5 p-10 text-center text-white/70">
+          You have no assigned tasks yet.
+        </div>
+      ) : (
+        <div className="mt-10 space-y-5">
+          {tasks.map((task) => (
+            <div
+              key={task.id}
+              className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-black/30"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-white">{task.title}</h2>
+                  <p className="text-sm text-white/60">{task.description}</p>
+                </div>
+                {task.deadline && (
+                  <span className="rounded-full border border-white/10 px-4 py-2 text-xs text-white/60">
+                    {new Date(task.deadline).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+
+              <p className="mt-3 text-sm text-white/70">
+                Project:{" "}
+                <span className="text-brand-secondary">
+                  {task.project?.title}
+                </span>
+              </p>
+
+              <div className="mt-4 flex flex-wrap gap-3">
+                {statusButtons.map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => updateStatus(task.id, status)}
+                    className={`rounded-2xl px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
+                      task.status === status
+                        ? "bg-gradient-to-r from-brand-accent to-brand-secondary text-brand-dark shadow-glow"
+                        : "border border-white/15 text-white/70 hover:border-white/40"
+                    }`}
+                  >
+                    {status.replace("_", " ")}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </PageContainer>
   );
 }

@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import Navbar from "../components/Navbar";
+import PageContainer from "../components/PageContainer";
 import api from "../api/axios";
 
+const statusButtons = ["TODO", "IN_PROGRESS", "DONE"];
+
 export default function StudentProjectDetails() {
-  const { id } = useParams(); // projectId
+  const { id } = useParams();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -32,98 +34,86 @@ export default function StudentProjectDetails() {
     load();
   }, [id]);
 
-  if (loading || !project)
+  if (loading || !project) {
     return (
-      <div className="min-h-screen bg-[#0b1020] text-white p-10">
-        Loading project...
-      </div>
+      <PageContainer>
+        <p className="text-white/70">Loading project...</p>
+      </PageContainer>
     );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0b1020] via-[#101830] to-[#141c40] text-white">
-      <Navbar />
-
-      <div className="pt-28 px-6 max-w-5xl mx-auto">
-        <h1 className="text-4xl font-bold mb-3">{project.title}</h1>
-
-        <p className="text-gray-300 mb-3">{project.description}</p>
-
-        {project.deadline && (
-          <p className="text-red-400 mb-6">
-            Deadline: {new Date(project.deadline).toLocaleDateString()}
+    <PageContainer>
+      <div className="space-y-6">
+        <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-brand-dark to-brand-surface p-8 shadow-2xl shadow-black/40">
+          <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
+            Project brief
           </p>
-        )}
+          <h1 className="mt-3 text-4xl font-semibold text-white">{project.title}</h1>
+          <p className="mt-4 text-white/70">{project.description}</p>
+          <div className="mt-6 flex flex-wrap gap-4 text-sm text-white/70">
+            {project.deadline && (
+              <span className="rounded-2xl border border-white/10 px-4 py-2">
+                Deadline: {new Date(project.deadline).toLocaleDateString()}
+              </span>
+            )}
+            <span className="rounded-2xl border border-white/10 px-4 py-2">
+              Teacher:{" "}
+              <span className="text-brand-secondary">
+                {project.teacher?.profile?.firstName}{" "}
+                {project.teacher?.profile?.lastName}
+              </span>
+            </span>
+          </div>
+        </div>
 
-        <p className="text-gray-300 mb-10 text-sm">
-          Teacher:{" "}
-          <span className="text-green-400">
-            {project.teacher?.profile?.firstName}{" "}
-            {project.teacher?.profile?.lastName}
-          </span>
-        </p>
-
-        {/* Student Tasks */}
-        <div className="bg-white/10 p-6 rounded-2xl border border-white/10">
-          <h2 className="text-2xl font-semibold mb-4">My Tasks</h2>
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-black/30">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
+                Taskboard
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">My tasks</h2>
+            </div>
+          </div>
 
           {project.tasks.length === 0 ? (
-            <p className="text-gray-400">No tasks assigned to you yet.</p>
+            <p className="mt-6 text-white/60">No tasks assigned yet.</p>
           ) : (
-            <div className="space-y-5">
+            <div className="mt-6 space-y-5">
               {project.tasks.map((task) => (
                 <div
                   key={task.id}
-                  className="bg-white/10 p-4 rounded-xl border border-white/10"
+                  className="rounded-2xl border border-white/10 bg-white/5 p-5"
                 >
-                  <h3 className="text-xl font-semibold">{task.title}</h3>
-                  <p className="text-gray-300 mb-2">{task.description}</p>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-xl font-semibold text-white">
+                        {task.title}
+                      </h3>
+                      <p className="text-sm text-white/60">{task.description}</p>
+                    </div>
+                    {task.deadline && (
+                      <span className="text-xs uppercase tracking-wide text-white/60">
+                        {new Date(task.deadline).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
 
-                  {task.deadline && (
-                    <p className="text-sm text-red-400">
-                      Deadline: {new Date(task.deadline).toLocaleDateString()}
-                    </p>
-                  )}
-
-                  <p className="mt-3 text-sm">
-                    Status:{" "}
-                    <span className="text-blue-400 font-semibold">
-                      {task.status}
-                    </span>
-                  </p>
-
-                  <div className="flex gap-2 mt-4">
-                    <button
-                      onClick={() => updateStatus(task.id, "TODO")}
-                      className={`px-3 py-1 rounded-lg text-sm ${
-                        task.status === "TODO"
-                          ? "bg-blue-600"
-                          : "bg-white/20 hover:bg-white/30"
-                      }`}
-                    >
-                      TODO
-                    </button>
-
-                    <button
-                      onClick={() => updateStatus(task.id, "IN_PROGRESS")}
-                      className={`px-3 py-1 rounded-lg text-sm ${
-                        task.status === "IN_PROGRESS"
-                          ? "bg-yellow-500"
-                          : "bg-white/20 hover:bg-white/30"
-                      }`}
-                    >
-                      IN PROGRESS
-                    </button>
-
-                    <button
-                      onClick={() => updateStatus(task.id, "DONE")}
-                      className={`px-3 py-1 rounded-lg text-sm ${
-                        task.status === "DONE"
-                          ? "bg-green-600"
-                          : "bg-white/20 hover:bg-white/30"
-                      }`}
-                    >
-                      DONE
-                    </button>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    {statusButtons.map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => updateStatus(task.id, status)}
+                        className={`rounded-2xl px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
+                          task.status === status
+                            ? "bg-gradient-to-r from-brand-accent to-brand-secondary text-brand-dark shadow-glow"
+                            : "border border-white/15 text-white/70 hover:border-white/40"
+                        }`}
+                      >
+                        {status.replace("_", " ")}
+                      </button>
+                    ))}
                   </div>
                 </div>
               ))}
@@ -131,6 +121,6 @@ export default function StudentProjectDetails() {
           )}
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }
