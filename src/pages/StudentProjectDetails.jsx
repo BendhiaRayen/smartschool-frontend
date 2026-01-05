@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import PageContainer from "../components/PageContainer";
 import api from "../api/axios";
 
@@ -100,20 +100,28 @@ export default function StudentProjectDetails() {
                     )}
                   </div>
 
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    {statusButtons.map((status) => (
-                      <button
-                        key={status}
-                        onClick={() => updateStatus(task.id, status)}
-                        className={`rounded-2xl px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
-                          task.status === status
-                            ? "bg-gradient-to-r from-brand-accent to-brand-secondary text-brand-dark shadow-glow"
-                            : "border border-white/15 text-white/70 hover:border-white/40"
-                        }`}
-                      >
-                        {status.replace("_", " ")}
-                      </button>
-                    ))}
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <div className="flex flex-wrap gap-3">
+                      {statusButtons.map((status) => (
+                        <button
+                          key={status}
+                          onClick={() => updateStatus(task.id, status)}
+                          className={`rounded-2xl px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
+                            task.status === status
+                              ? "bg-gradient-to-r from-brand-accent to-brand-secondary text-brand-dark shadow-glow"
+                              : "border border-white/15 text-white/70 hover:border-white/40"
+                          }`}
+                        >
+                          {status.replace("_", " ")}
+                        </button>
+                      ))}
+                    </div>
+                    <Link
+                      to={`/student/tasks/${task.id}/submissions`}
+                      className="ml-auto rounded-2xl border border-brand-secondary/40 bg-brand-secondary/10 px-4 py-2 text-xs font-semibold text-brand-secondary transition hover:bg-brand-secondary/20"
+                    >
+                      View Submissions
+                    </Link>
                   </div>
                 </div>
               ))}

@@ -37,9 +37,9 @@ export default function StudentProjects() {
     <PageContainer>
       <div className="space-y-4">
         <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
-          Learner view
+          Projects
         </p>
-        <h1 className="text-3xl font-semibold text-white">My projects</h1>
+        <h1 className="text-3xl font-semibold text-white">My Projects</h1>
       </div>
 
       {projects.length === 0 ? (

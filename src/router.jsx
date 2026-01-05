@@ -14,6 +14,10 @@ import TeacherProjectDetails from "./pages/TeacherProjectDetails";
 import StudentProjects from "./pages/StudentProjects";
 import StudentProjectDetails from "./pages/StudentProjectDetails";
 import StudentTasks from "./pages/StudentTasks";
+import TaskSubmissions from "./pages/TaskSubmissions";
+import TeacherTaskReview from "./pages/TeacherTaskReview";
+import ProjectProgress from "./pages/ProjectProgress";
+import Notifications from "./pages/Notifications";
 
 export const router = createBrowserRouter([
   { path: "/", element: <HomePage /> },
@@ -93,6 +97,38 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <StudentTasks />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/student/tasks/:taskId/submissions",
+    element: (
+      <ProtectedRoute>
+        <TaskSubmissions />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/teacher/tasks/:taskId/submissions",
+    element: (
+      <ProtectedRoute>
+        <TeacherTaskReview />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/teacher/projects/:projectId/progress",
+    element: (
+      <ProtectedRoute>
+        <ProjectProgress />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/notifications",
+    element: (
+      <ProtectedRoute>
+        <Notifications />
       </ProtectedRoute>
     ),
   },

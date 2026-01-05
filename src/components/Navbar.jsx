@@ -1,5 +1,6 @@
 import { useAuthStore } from "../store/auth";
 import { Link, useNavigate } from "react-router-dom";
+import NotificationBell from "./NotificationBell";
 
 export default function Navbar() {
   const { user, logout } = useAuthStore();
@@ -59,6 +60,7 @@ export default function Navbar() {
               </>
             ) : (
               <>
+                <NotificationBell />
                 <Link
                   to="/dashboard"
                   className="rounded-xl border border-white/20 px-4 py-2 text-white/80 transition hover:border-white/40 hover:text-white"

@@ -40,10 +40,10 @@ export default function TeacherProjects() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
-            Project studio
+            Projects
           </p>
           <h1 className="mt-2 text-3xl font-semibold text-white">
-            My initiatives
+            My Projects
           </h1>
         </div>
         <Link

@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import PageContainer from "../components/PageContainer";
 import api from "../api/axios";
 
 const inputClass =
   "w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/40 outline-none";
 
-const statusButtons = ["TODO", "IN_PROGRESS", "DONE"];
+// Status buttons removed - only students can change task status
 
 export default function TeacherProjectDetails() {
   const { id } = useParams();
@@ -15,6 +15,19 @@ export default function TeacherProjectDetails() {
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState([]);
   const [taskForm, setTaskForm] = useState({
+    title: "",
+    description: "",
+    deadline: "",
+    assignedTo: "",
+  });
+  const [editingProject, setEditingProject] = useState(false);
+  const [projectForm, setProjectForm] = useState({
+    title: "",
+    description: "",
+    deadline: "",
+  });
+  const [editingTask, setEditingTask] = useState(null);
+  const [taskEditForm, setTaskEditForm] = useState({
     title: "",
     description: "",
     deadline: "",
@@ -46,34 +59,70 @@ export default function TeacherProjectDetails() {
     loadStudents();
   }, [id]);
 
+  useEffect(() => {
+    if (project && !editingProject) {
+      setProjectForm({
+        title: project.title || "",
+        description: project.description || "",
+        deadline: project.deadline ? new Date(project.deadline).toISOString().split('T')[0] : "",
+      });
+    }
+  }, [project, editingProject]);
+
   const addTask = async (e) => {
     e.preventDefault();
+    
+    // Validate deadline is not in the past
+    if (taskForm.deadline) {
+      const deadlineDate = new Date(taskForm.deadline);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (deadlineDate < today) {
+        alert("Task deadline cannot be in the past");
+        return;
+      }
+      
+      // Validate task deadline is not before project deadline
+      if (project.deadline) {
+        const projectDeadline = new Date(project.deadline);
+        projectDeadline.setHours(0, 0, 0, 0);
+        
+        if (deadlineDate > projectDeadline) {
+          alert("Task deadline cannot be after the project deadline");
+          return;
+        }
+      }
+    }
+    
     try {
-      await api.post("/api/tasks", {
+      const payload = {
         projectId: Number(id),
         title: taskForm.title,
         description: taskForm.description,
         deadline: taskForm.deadline,
-        assignedTo:
-          taskForm.assignedTo !== "" ? Number(taskForm.assignedTo) : null,
-      });
+      };
 
-      setTaskForm({ title: "", description: "", deadline: "", assignedTo: "" });
+      if (taskForm.assignedTo !== "") {
+        payload.assignedTo = Number(taskForm.assignedTo);
+      }
+
+      await api.post("/api/tasks", payload);
+
+      setTaskForm({ 
+        title: "", 
+        description: "", 
+        deadline: "", 
+        assignedTo: ""
+      });
       loadProject();
     } catch (err) {
       console.error(err);
-      alert("Error creating task");
+      alert(err.response?.data?.message || "Error creating task");
     }
   };
 
-  const updateTaskStatus = async (taskId, status) => {
-    try {
-      await api.patch(`/api/tasks/${taskId}/status`, { status });
-      loadProject();
-    } catch (err) {
-      alert("Error updating task");
-    }
-  };
+  // Task status updates are only available to students
 
   const addStudent = async (studentId) => {
     try {
@@ -88,6 +137,124 @@ export default function TeacherProjectDetails() {
     }
   };
 
+  const removeStudent = async (studentId) => {
+    if (!confirm("Are you sure you want to remove this student from the project?")) return;
+    try {
+      await api.delete(`/api/projects/${id}/students/${studentId}`);
+      loadProject();
+    } catch (err) {
+      alert(err.response?.data?.message || "Error removing student");
+    }
+  };
+
+  const updateProject = async (e) => {
+    e.preventDefault();
+    
+    // Validate deadline is not in the past
+    if (projectForm.deadline) {
+      const deadlineDate = new Date(projectForm.deadline);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (deadlineDate < today) {
+        alert("Deadline cannot be in the past");
+        return;
+      }
+    }
+    
+    try {
+      await api.patch(`/api/projects/${id}`, projectForm);
+      setEditingProject(false);
+      loadProject();
+    } catch (err) {
+      alert(err.response?.data?.message || "Error updating project");
+    }
+  };
+
+  const deleteTask = async (taskId) => {
+    if (!confirm("Are you sure you want to delete this task?")) return;
+    try {
+      await api.delete(`/api/tasks/${taskId}`);
+      loadProject();
+    } catch (err) {
+      alert(err.response?.data?.message || "Error deleting task");
+    }
+  };
+
+  const startEditTask = (task) => {
+    setEditingTask(task.id);
+    setTaskEditForm({
+      title: task.title || "",
+      description: task.description || "",
+      deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : "",
+      assignedTo: task.assignedTo ? task.assignedTo.toString() : "",
+    });
+  };
+
+  const cancelEditTask = () => {
+    setEditingTask(null);
+    setTaskEditForm({
+      title: "",
+      description: "",
+      deadline: "",
+      assignedTo: "",
+    });
+  };
+
+  const updateTask = async (taskId) => {
+    // Validate deadline is not in the past
+    if (taskEditForm.deadline) {
+      const deadlineDate = new Date(taskEditForm.deadline);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (deadlineDate < today) {
+        alert("Task deadline cannot be in the past");
+        return;
+      }
+      
+      // Validate task deadline is not after project deadline
+      if (project.deadline) {
+        const projectDeadline = new Date(project.deadline);
+        projectDeadline.setHours(0, 0, 0, 0);
+        
+        if (deadlineDate > projectDeadline) {
+          alert("Task deadline cannot be after the project deadline");
+          return;
+        }
+      }
+    }
+    
+    try {
+      const payload = {
+        title: taskEditForm.title,
+        description: taskEditForm.description,
+        deadline: taskEditForm.deadline,
+      };
+
+      if (taskEditForm.assignedTo !== "") {
+        payload.assignedTo = Number(taskEditForm.assignedTo);
+      }
+
+      await api.patch(`/api/tasks/${taskId}`, payload);
+      setEditingTask(null);
+      loadProject();
+    } catch (err) {
+      alert(err.response?.data?.message || "Error updating task");
+    }
+  };
+
+  const removeStudentFromTask = async (taskId) => {
+    if (!confirm("Are you sure you want to unassign this student from the task?")) return;
+    try {
+      await api.delete(`/api/tasks/${taskId}/student`);
+      loadProject();
+    } catch (err) {
+      alert(err.response?.data?.message || "Error removing student from task");
+    }
+  };
+
+
   if (loading || !project) {
     return (
       <PageContainer>
@@ -100,16 +267,80 @@ export default function TeacherProjectDetails() {
     <PageContainer>
       <div className="space-y-10">
         <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-brand-dark to-brand-surface p-8 shadow-2xl shadow-black/40">
-          <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
-            Project overview
-          </p>
-          <h1 className="mt-4 text-4xl font-semibold text-white">{project.title}</h1>
-          <p className="mt-3 text-white/70">{project.description}</p>
-          {project.deadline && (
-            <span className="mt-5 inline-flex rounded-full border border-white/10 px-4 py-2 text-xs text-white/60">
-              Deadline: {new Date(project.deadline).toLocaleDateString()}
-            </span>
-          )}
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
+                Project overview
+              </p>
+              {project && (
+                <Link
+                  to={`/teacher/projects/${id}/progress`}
+                  className="mt-4 inline-block rounded-2xl border border-brand-secondary/40 bg-brand-secondary/10 px-4 py-2 text-sm font-semibold text-brand-secondary transition hover:bg-brand-secondary/20"
+                >
+                  View Progress
+                </Link>
+              )}
+              {editingProject ? (
+                <form onSubmit={updateProject} className="mt-4 space-y-4">
+                  <input
+                    type="text"
+                    value={projectForm.title}
+                    onChange={(e) => setProjectForm({ ...projectForm, title: e.target.value })}
+                    required
+                    className={inputClass}
+                    placeholder="Project title"
+                  />
+                  <textarea
+                    value={projectForm.description}
+                    onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
+                    rows={3}
+                    className={`${inputClass} resize-none`}
+                    placeholder="Description"
+                  />
+                  <input
+                    type="date"
+                    value={projectForm.deadline}
+                    onChange={(e) => setProjectForm({ ...projectForm, deadline: e.target.value })}
+                    min={new Date().toISOString().split('T')[0]}
+                    className={inputClass}
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      type="submit"
+                      className="rounded-2xl bg-gradient-to-r from-brand-accent to-brand-secondary px-4 py-2 text-sm font-semibold text-brand-dark shadow-glow"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingProject(false)}
+                      className="rounded-2xl border border-white/15 px-4 py-2 text-sm text-white/70 hover:border-white/40"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <h1 className="mt-4 text-4xl font-semibold text-white">{project.title}</h1>
+                  <p className="mt-3 text-white/70">{project.description}</p>
+                  {project.deadline && (
+                    <span className="mt-5 inline-flex rounded-full border border-white/10 px-4 py-2 text-xs text-white/60">
+                      Deadline: {new Date(project.deadline).toLocaleDateString()}
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+            {!editingProject && (
+              <button
+                onClick={() => setEditingProject(true)}
+                className="ml-4 rounded-2xl border border-white/15 px-4 py-2 text-sm text-white/70 hover:border-white/40"
+              >
+                Edit
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
@@ -132,10 +363,18 @@ export default function TeacherProjectDetails() {
                 {project.students.map((ps) => (
                   <li
                     key={ps.id}
-                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80"
+                    className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80"
                   >
-                    {ps.student.profile?.firstName} {ps.student.profile?.lastName}
-                    <span className="text-white/50"> · {ps.student.email}</span>
+                    <div>
+                      {ps.student.profile?.firstName} {ps.student.profile?.lastName}
+                      <span className="text-white/50"> · {ps.student.email}</span>
+                    </div>
+                    <button
+                      onClick={() => removeStudent(ps.studentId)}
+                      className="ml-3 rounded-lg border border-red-400/30 px-2 py-1 text-xs text-red-300 transition hover:border-red-400 hover:text-red-200"
+                    >
+                      Remove
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -158,6 +397,7 @@ export default function TeacherProjectDetails() {
                   </button>
                 ))}
             </div>
+
           </div>
 
           <div className="space-y-6">
@@ -180,46 +420,146 @@ export default function TeacherProjectDetails() {
                       key={task.id}
                       className="rounded-2xl border border-white/10 bg-white/5 p-4"
                     >
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <h3 className="text-lg font-semibold text-white">
-                            {task.title}
-                          </h3>
-                          <p className="text-sm text-white/60">
-                            {task.description}
-                          </p>
+                      {editingTask === task.id ? (
+                        <div className="space-y-4">
+                          <input
+                            type="text"
+                            value={taskEditForm.title}
+                            onChange={(e) => setTaskEditForm({ ...taskEditForm, title: e.target.value })}
+                            required
+                            className={inputClass}
+                            placeholder="Task title"
+                          />
+                          <textarea
+                            value={taskEditForm.description}
+                            onChange={(e) => setTaskEditForm({ ...taskEditForm, description: e.target.value })}
+                            rows={3}
+                            className={`${inputClass} resize-none`}
+                            placeholder="Description"
+                          />
+                          <input
+                            type="date"
+                            value={taskEditForm.deadline}
+                            onChange={(e) => setTaskEditForm({ ...taskEditForm, deadline: e.target.value })}
+                            min={new Date().toISOString().split('T')[0]}
+                            max={project.deadline ? new Date(project.deadline).toISOString().split('T')[0] : undefined}
+                            className={inputClass}
+                          />
+                          <div>
+                            <label className="text-sm text-white/60 mb-2 block">Assign to Student</label>
+                            <select
+                              value={taskEditForm.assignedTo}
+                              onChange={(e) =>
+                                setTaskEditForm({
+                                  ...taskEditForm,
+                                  assignedTo: e.target.value,
+                                })
+                              }
+                              className={`${inputClass} bg-brand-dark text-white`}
+                              style={{
+                                backgroundColor: '#050714',
+                                color: 'white'
+                              }}
+                            >
+                              <option value="" style={{ backgroundColor: '#050714', color: 'white' }}>Unassigned</option>
+                              {project.students.map((ps) => (
+                                <option 
+                                  key={ps.id} 
+                                  value={ps.studentId}
+                                  style={{ backgroundColor: '#050714', color: 'white' }}
+                                >
+                                  {ps.student.profile?.firstName} {ps.student.profile?.lastName}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => updateTask(task.id)}
+                              className="rounded-2xl bg-gradient-to-r from-brand-accent to-brand-secondary px-4 py-2 text-sm font-semibold text-brand-dark shadow-glow"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={cancelEditTask}
+                              className="rounded-2xl border border-white/15 px-4 py-2 text-sm text-white/70 hover:border-white/40"
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         </div>
-                        {task.deadline && (
-                          <span className="text-xs uppercase tracking-wide text-white/60">
-                            {new Date(task.deadline).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
+                      ) : (
+                        <>
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex-1">
+                              <h3 className="text-lg font-semibold text-white">
+                                {task.title}
+                              </h3>
+                              <p className="text-sm text-white/60">
+                                {task.description}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {task.deadline && (
+                                <span className="text-xs uppercase tracking-wide text-white/60">
+                                  {new Date(task.deadline).toLocaleDateString()}
+                                </span>
+                              )}
+                              <Link
+                                to={`/teacher/tasks/${task.id}/submissions`}
+                                className="rounded-lg border border-brand-secondary/40 bg-brand-secondary/10 px-2 py-1 text-xs text-brand-secondary hover:bg-brand-secondary/20"
+                              >
+                                Review
+                              </Link>
+                              <button
+                                onClick={() => startEditTask(task)}
+                                className="rounded-lg border border-white/15 px-2 py-1 text-xs text-white/70 hover:border-white/40"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => deleteTask(task.id)}
+                                className="rounded-lg border border-red-400/30 px-2 py-1 text-xs text-red-300 hover:border-red-400 hover:text-red-200"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
 
-                      <p className="mt-3 text-sm text-white/70">
-                        Assigned to:{" "}
-                        <span className="text-brand-secondary">
-                          {task.student
-                            ? `${task.student.profile?.firstName} ${task.student.profile?.lastName}`
-                            : "Unassigned"}
-                        </span>
-                      </p>
-
-                      <div className="mt-4 flex flex-wrap gap-3">
-                        {statusButtons.map((status) => (
-                          <button
-                            key={status}
-                            onClick={() => updateTaskStatus(task.id, status)}
-                            className={`rounded-2xl px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
-                              task.status === status
-                                ? "bg-gradient-to-r from-brand-accent to-brand-secondary text-brand-dark shadow-glow"
-                                : "border border-white/15 text-white/70 hover:border-white/40"
-                            }`}
-                          >
-                            {status.replace("_", " ")}
-                          </button>
-                        ))}
-                      </div>
+                          <div className="mt-3 flex flex-wrap items-center gap-4 text-sm">
+                            <p className="text-white/70">
+                              Assigned to:{" "}
+                              <span className="text-brand-secondary">
+                                {task.student
+                                  ? `${task.student.profile?.firstName} ${task.student.profile?.lastName}`
+                                  : "Unassigned"}
+                              </span>
+                              {task.student && (
+                                <button
+                                  onClick={() => removeStudentFromTask(task.id)}
+                                  className="ml-2 rounded-lg border border-red-400/30 px-2 py-1 text-xs text-red-300 hover:border-red-400 hover:text-red-200"
+                                >
+                                  Unassign
+                                </button>
+                              )}
+                            </p>
+                            <p className="text-white/70">
+                              Workflow:{" "}
+                              <span className="inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-secondary">
+                                {task.status?.replace("_", " ") || "TODO"}
+                              </span>
+                              {task.reviewStatus && (
+                                <>
+                                  {" "}| Review:{" "}
+                                  <span className="inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-400">
+                                    {task.reviewStatus.replace("_", " ")}
+                                  </span>
+                                </>
+                              )}
+                            </p>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -254,25 +594,38 @@ export default function TeacherProjectDetails() {
                   onChange={(e) =>
                     setTaskForm({ ...taskForm, deadline: e.target.value })
                   }
+                  min={new Date().toISOString().split('T')[0]}
+                  max={project.deadline ? new Date(project.deadline).toISOString().split('T')[0] : undefined}
                   className={inputClass}
                 />
-                <select
-                  value={taskForm.assignedTo}
-                  onChange={(e) =>
-                    setTaskForm({
-                      ...taskForm,
-                      assignedTo: e.target.value ? Number(e.target.value) : "",
-                    })
-                  }
-                  className={inputClass}
-                >
-                  <option value="">Unassigned</option>
-                  {project.students.map((ps) => (
-                    <option key={ps.id} value={ps.studentId}>
-                      {ps.student.profile?.firstName} {ps.student.profile?.lastName}
-                    </option>
-                  ))}
-                </select>
+                <div>
+                  <label className="text-sm text-white/60 mb-2 block">Assign to Student</label>
+                  <select
+                    value={taskForm.assignedTo}
+                    onChange={(e) =>
+                      setTaskForm({
+                        ...taskForm,
+                        assignedTo: e.target.value ? Number(e.target.value) : "",
+                      })
+                    }
+                    className={`${inputClass} bg-brand-dark text-white`}
+                    style={{
+                      backgroundColor: '#050714',
+                      color: 'white'
+                    }}
+                  >
+                    <option value="" style={{ backgroundColor: '#050714', color: 'white' }}>Unassigned</option>
+                    {project.students.map((ps) => (
+                      <option 
+                        key={ps.id} 
+                        value={ps.studentId}
+                        style={{ backgroundColor: '#050714', color: 'white' }}
+                      >
+                        {ps.student.profile?.firstName} {ps.student.profile?.lastName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <button
                   type="submit"
                   className="w-full rounded-2xl bg-gradient-to-r from-brand-accent to-brand-secondary px-4 py-3 font-semibold text-brand-dark shadow-glow transition hover:translate-y-0.5"

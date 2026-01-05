@@ -43,6 +43,19 @@ export default function CreateProject() {
 
   const createProject = async (e) => {
     e.preventDefault();
+    
+    // Validate deadline is not in the past
+    if (form.deadline) {
+      const deadlineDate = new Date(form.deadline);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (deadlineDate < today) {
+        alert("Deadline cannot be in the past");
+        return;
+      }
+    }
+    
     try {
       await api.post("/api/projects", form);
       navigate("/teacher/projects");
@@ -100,6 +113,7 @@ export default function CreateProject() {
               type="date"
               value={form.deadline}
               onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+              min={new Date().toISOString().split('T')[0]}
               required
               className={inputClass}
             />

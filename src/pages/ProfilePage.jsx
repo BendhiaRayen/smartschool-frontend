@@ -84,11 +84,10 @@ export default function ProfilePage() {
             Identity
           </p>
           <h1 className="mt-4 text-3xl font-semibold text-white">
-            Keep your SmartSchool profile in sync.
+            Profile Settings
           </h1>
           <p className="mt-3 text-white/70">
-            Update contact details, craft a short bio, and control password
-            settings so teams always know who’s behind the work.
+            Update your personal information and manage your account settings.
           </p>
         </div>
 
@@ -200,7 +199,7 @@ export default function ProfilePage() {
                 Account overview
               </p>
               <h3 className="mt-2 text-xl font-semibold text-white">
-                Identity signals
+                Account Information
               </h3>
               <ul className="mt-4 space-y-3 text-sm text-white/70">
                 <li>

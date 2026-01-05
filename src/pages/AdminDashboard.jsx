@@ -68,11 +68,10 @@ export default function AdminDashboard() {
             Admin control
           </p>
           <h1 className="mt-4 text-3xl font-semibold text-white">
-            Govern your SmartSchool workspace with clarity.
+            Admin Dashboard
           </h1>
           <p className="mt-3 text-white/70">
-            Promote teachers, onboard students, and keep access aligned using a
-            single, auditable surface.
+            Manage users, roles, and system access.
           </p>
         </div>
 
