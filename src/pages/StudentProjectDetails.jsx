@@ -45,11 +45,27 @@ export default function StudentProjectDetails() {
   return (
     <PageContainer>
       <div className="space-y-6">
-        <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-brand-dark to-brand-surface p-8 shadow-2xl shadow-black/40">
-          <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
-            Project brief
-          </p>
+        <div className={`rounded-3xl border p-8 shadow-2xl shadow-black/40 ${
+          project.isArchived
+            ? "border-orange-400/20 bg-gradient-to-br from-orange-400/10 to-brand-surface"
+            : "border-white/10 bg-gradient-to-br from-brand-dark to-brand-surface"
+        }`}>
+          <div className="flex items-center gap-3 flex-wrap">
+            <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
+              Project brief
+            </p>
+            {project.isArchived && (
+              <span className="rounded-full border border-orange-400/50 bg-orange-400/10 px-3 py-1 text-xs font-semibold text-orange-300">
+                Archived Project
+              </span>
+            )}
+          </div>
           <h1 className="mt-3 text-4xl font-semibold text-white">{project.title}</h1>
+          {project.isArchived && (
+            <p className="mt-2 text-sm text-orange-300/80">
+              This project is archived and read-only. You can view tasks and submissions but cannot make changes.
+            </p>
+          )}
           <p className="mt-4 text-white/70">{project.description}</p>
           <div className="mt-6 flex flex-wrap gap-4 text-sm text-white/70">
             {project.deadline && (
@@ -84,7 +100,11 @@ export default function StudentProjectDetails() {
               {project.tasks.map((task) => (
                 <div
                   key={task.id}
-                  className="rounded-2xl border border-white/10 bg-white/5 p-5"
+                  className={`rounded-2xl border p-5 ${
+                    project.isArchived
+                      ? "border-orange-400/20 bg-orange-400/5"
+                      : "border-white/10 bg-white/5"
+                  }`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
@@ -105,9 +125,12 @@ export default function StudentProjectDetails() {
                       {statusButtons.map((status) => (
                         <button
                           key={status}
-                          onClick={() => updateStatus(task.id, status)}
+                          onClick={() => !project.isArchived && updateStatus(task.id, status)}
+                          disabled={project.isArchived}
                           className={`rounded-2xl px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
-                            task.status === status
+                            project.isArchived
+                              ? "border border-white/10 bg-white/5 text-white/30 cursor-not-allowed"
+                              : task.status === status
                               ? "bg-gradient-to-r from-brand-accent to-brand-secondary text-brand-dark shadow-glow"
                               : "border border-white/15 text-white/70 hover:border-white/40"
                           }`}
@@ -116,12 +139,18 @@ export default function StudentProjectDetails() {
                         </button>
                       ))}
                     </div>
-                    <Link
-                      to={`/student/tasks/${task.id}/submissions`}
-                      className="ml-auto rounded-2xl border border-brand-secondary/40 bg-brand-secondary/10 px-4 py-2 text-xs font-semibold text-brand-secondary transition hover:bg-brand-secondary/20"
-                    >
-                      View Submissions
-                    </Link>
+                    {project.isArchived ? (
+                      <span className="ml-auto rounded-2xl border border-orange-400/30 bg-orange-400/10 px-4 py-2 text-xs font-semibold text-orange-300/70 cursor-not-allowed">
+                        View Only
+                      </span>
+                    ) : (
+                      <Link
+                        to={`/student/tasks/${task.id}/submissions`}
+                        className="ml-auto rounded-2xl border border-brand-secondary/40 bg-brand-secondary/10 px-4 py-2 text-xs font-semibold text-brand-secondary transition hover:bg-brand-secondary/20"
+                      >
+                        View Submissions
+                      </Link>
+                    )}
                   </div>
                 </div>
               ))}

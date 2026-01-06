@@ -85,9 +85,21 @@ export default function NotificationBell() {
       return `/student/tasks/${notification.entityId}/submissions`;
     }
     if (notification.entityType === "SUBMISSION" && notification.entityId) {
-      const metadata = notification.metadata ? JSON.parse(notification.metadata) : {};
-      if (metadata.taskId) {
-        return `/student/tasks/${metadata.taskId}/submissions`;
+      try {
+        const metadata = notification.metadata 
+          ? (typeof notification.metadata === 'string' 
+              ? JSON.parse(notification.metadata) 
+              : notification.metadata)
+          : {};
+        if (metadata.taskId) {
+          return `/student/tasks/${metadata.taskId}/submissions`;
+        }
+      } catch (err) {
+        console.error("Error parsing notification metadata:", err, notification.metadata);
+        // Try to extract taskId from entityId if metadata is malformed
+        // For TASK_SUBMITTED notifications, entityId is the submissionId
+        // We can't get taskId without metadata, so return null
+        return null;
       }
     }
     if (notification.entityType === "PROJECT" && notification.entityId) {
@@ -243,4 +255,5 @@ export default function NotificationBell() {
     </div>
   );
 }
+
 

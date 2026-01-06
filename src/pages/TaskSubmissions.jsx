@@ -32,7 +32,11 @@ export default function TaskSubmissions() {
         for (const project of projects.data) {
           const task = project.tasks?.find((t) => t.id === Number(taskId));
           if (task) {
-            setTask({ ...task, projectTitle: project.title });
+            setTask({ 
+              ...task, 
+              projectTitle: project.title,
+              projectIsArchived: project.isArchived || false,
+            });
             break;
           }
         }
@@ -93,7 +97,13 @@ export default function TaskSubmissions() {
       loadSubmissions();
       loadTask();
     } catch (err) {
-      alert(err.response?.data?.message || "Error submitting");
+      const errorMessage = err.response?.data?.message || "Error submitting";
+      alert(errorMessage);
+      
+      // If submission failed due to restrictions, reload task to get updated status
+      if (errorMessage.includes("archived") || errorMessage.includes("approved")) {
+        loadTask();
+      }
     }
   };
 
@@ -131,18 +141,76 @@ export default function TaskSubmissions() {
 
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-white">My Submissions</h2>
-          <button
-            onClick={() => setShowSubmitForm(true)}
-            className="rounded-2xl bg-gradient-to-r from-brand-accent to-brand-secondary px-5 py-3 text-sm font-semibold text-brand-dark shadow-glow transition hover:translate-y-0.5"
-          >
-            + New Submission
-          </button>
+          {(() => {
+            const isProjectArchived = task.project?.isArchived || task.projectIsArchived;
+            const isTaskApproved = task.reviewStatus === "APPROVED";
+            const canSubmit = !isProjectArchived && !isTaskApproved;
+
+            if (!canSubmit) {
+              return (
+                <div className="text-right">
+                  {isProjectArchived && (
+                    <p className="text-sm text-amber-300 mb-2">
+                      ⚠️ Project is archived (read-only)
+                    </p>
+                  )}
+                  {isTaskApproved && (
+                    <p className="text-sm text-green-300 mb-2">
+                      ✅ Task is approved - no further submissions needed
+                    </p>
+                  )}
+                  <button
+                    disabled
+                    className="rounded-2xl bg-white/10 px-5 py-3 text-sm font-semibold text-white/50 cursor-not-allowed"
+                  >
+                    + New Submission
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <button
+                onClick={() => setShowSubmitForm(true)}
+                className="rounded-2xl bg-gradient-to-r from-brand-accent to-brand-secondary px-5 py-3 text-sm font-semibold text-brand-dark shadow-glow transition hover:translate-y-0.5"
+              >
+                + New Submission
+              </button>
+            );
+          })()}
         </div>
 
-        {showSubmitForm && (
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-lg shadow-black/30">
-            <h3 className="text-xl font-semibold text-white mb-4">Submit Work</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
+        {showSubmitForm && (() => {
+          const isProjectArchived = task.project?.isArchived || task.projectIsArchived;
+          const isTaskApproved = task.reviewStatus === "APPROVED";
+          const canSubmit = !isProjectArchived && !isTaskApproved;
+
+          if (!canSubmit) {
+            return (
+              <div className="rounded-3xl border border-amber-400/30 bg-amber-400/10 p-8 shadow-lg shadow-black/30">
+                <h3 className="text-xl font-semibold text-amber-300 mb-4">Cannot Submit</h3>
+                <div className="space-y-2 text-white/80">
+                  {isProjectArchived && (
+                    <p>⚠️ This project is archived and read-only. You cannot submit to tasks in archived projects.</p>
+                  )}
+                  {isTaskApproved && (
+                    <p>✅ This task has been approved. No further submissions are needed.</p>
+                  )}
+                </div>
+                <button
+                  onClick={() => setShowSubmitForm(false)}
+                  className="mt-4 rounded-2xl border border-white/15 px-4 py-2 text-sm text-white/70 hover:border-white/40"
+                >
+                  Close
+                </button>
+              </div>
+            );
+          }
+
+          return (
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-lg shadow-black/30">
+              <h3 className="text-xl font-semibold text-white mb-4">Submit Work</h3>
+              <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="text-sm text-white/60 mb-2 block">Submission Type</label>
                 <select
@@ -225,7 +293,8 @@ export default function TaskSubmissions() {
               </div>
             </form>
           </div>
-        )}
+          );
+        })()}
 
         {submissions.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-white/20 bg-white/5 p-10 text-center text-white/60">

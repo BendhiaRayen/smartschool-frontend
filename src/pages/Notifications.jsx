@@ -80,9 +80,18 @@ export default function Notifications() {
       return `/student/tasks/${notification.entityId}/submissions`;
     }
     if (notification.entityType === "SUBMISSION" && notification.entityId) {
-      const metadata = notification.metadata ? JSON.parse(notification.metadata) : {};
-      if (metadata.taskId) {
-        return `/student/tasks/${metadata.taskId}/submissions`;
+      try {
+        const metadata = notification.metadata 
+          ? (typeof notification.metadata === 'string' 
+              ? JSON.parse(notification.metadata) 
+              : notification.metadata)
+          : {};
+        if (metadata.taskId) {
+          return `/student/tasks/${metadata.taskId}/submissions`;
+        }
+      } catch (err) {
+        console.error("Error parsing notification metadata:", err, notification.metadata);
+        return null;
       }
     }
     if (notification.entityType === "PROJECT" && notification.entityId) {
@@ -262,4 +271,5 @@ export default function Notifications() {
     </PageContainer>
   );
 }
+
 

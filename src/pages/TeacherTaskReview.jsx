@@ -26,13 +26,34 @@ export default function TeacherTaskReview() {
 
   const loadTask = async () => {
     try {
-      const { data } = await api.get(`/api/projects`);
-      // Find task in projects
+      // Try active projects first
+      let data = await api.get(`/api/projects?status=active`).then(res => res.data);
+      // Find task in active projects
       for (const project of data) {
         const foundTask = project.tasks?.find((t) => t.id === Number(taskId));
         if (foundTask) {
           setTask({ ...foundTask, projectTitle: project.title });
-          break;
+          return;
+        }
+      }
+      
+      // If not found, try archived projects
+      data = await api.get(`/api/projects?status=archived`).then(res => res.data);
+      for (const project of data) {
+        const foundTask = project.tasks?.find((t) => t.id === Number(taskId));
+        if (foundTask) {
+          setTask({ ...foundTask, projectTitle: project.title });
+          return;
+        }
+      }
+      
+      // If still not found, try all projects
+      data = await api.get(`/api/projects?status=all`).then(res => res.data);
+      for (const project of data) {
+        const foundTask = project.tasks?.find((t) => t.id === Number(taskId));
+        if (foundTask) {
+          setTask({ ...foundTask, projectTitle: project.title });
+          return;
         }
       }
     } catch (err) {

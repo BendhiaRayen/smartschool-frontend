@@ -59,11 +59,22 @@ export default function StudentTasks() {
           {tasks.map((task) => (
             <div
               key={task.id}
-              className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-black/30"
+              className={`rounded-3xl border p-6 shadow-lg shadow-black/30 ${
+                task.project?.isArchived
+                  ? "border-orange-400/20 bg-orange-400/5"
+                  : "border-white/10 bg-white/5"
+              }`}
             >
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-white">{task.title}</h2>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-xl font-semibold text-white">{task.title}</h2>
+                    {task.project?.isArchived && (
+                      <span className="rounded-full border border-orange-400/50 bg-orange-400/10 px-3 py-1 text-xs font-semibold text-orange-300">
+                        Archived Project
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-white/60">{task.description}</p>
                 </div>
                 {task.deadline && (
@@ -78,6 +89,11 @@ export default function StudentTasks() {
                 <span className="text-brand-secondary">
                   {task.project?.title}
                 </span>
+                {task.project?.isArchived && (
+                  <span className="ml-2 text-xs text-orange-300/70">
+                    (Read-only)
+                  </span>
+                )}
               </p>
 
               <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -85,9 +101,12 @@ export default function StudentTasks() {
                   {statusButtons.map((status) => (
                     <button
                       key={status}
-                      onClick={() => updateStatus(task.id, status)}
+                      onClick={() => !task.project?.isArchived && updateStatus(task.id, status)}
+                      disabled={task.project?.isArchived}
                       className={`rounded-2xl px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
-                        task.status === status
+                        task.project?.isArchived
+                          ? "border border-white/10 bg-white/5 text-white/30 cursor-not-allowed"
+                          : task.status === status
                           ? "bg-gradient-to-r from-brand-accent to-brand-secondary text-brand-dark shadow-glow"
                           : "border border-white/15 text-white/70 hover:border-white/40"
                       }`}
@@ -96,12 +115,18 @@ export default function StudentTasks() {
                     </button>
                   ))}
                 </div>
-                <Link
-                  to={`/student/tasks/${task.id}/submissions`}
-                  className="ml-auto rounded-2xl border border-brand-secondary/40 bg-brand-secondary/10 px-4 py-2 text-xs font-semibold text-brand-secondary transition hover:bg-brand-secondary/20"
-                >
-                  Submissions
-                </Link>
+                {task.project?.isArchived ? (
+                  <span className="ml-auto rounded-2xl border border-orange-400/30 bg-orange-400/10 px-4 py-2 text-xs font-semibold text-orange-300/70 cursor-not-allowed">
+                    View Only
+                  </span>
+                ) : (
+                  <Link
+                    to={`/student/tasks/${task.id}/submissions`}
+                    className="ml-auto rounded-2xl border border-brand-secondary/40 bg-brand-secondary/10 px-4 py-2 text-xs font-semibold text-brand-secondary transition hover:bg-brand-secondary/20"
+                  >
+                    Submissions
+                  </Link>
+                )}
               </div>
             </div>
           ))}

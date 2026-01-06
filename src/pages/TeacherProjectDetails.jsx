@@ -255,6 +255,26 @@ export default function TeacherProjectDetails() {
   };
 
 
+  const handleArchive = async () => {
+    if (!confirm("Archiving makes the project read-only. You can unarchive later. Continue?")) return;
+    try {
+      await api.patch(`/api/projects/${id}/archive`);
+      loadProject();
+    } catch (err) {
+      alert(err.response?.data?.message || "Error archiving project");
+    }
+  };
+
+  const handleUnarchive = async () => {
+    if (!confirm("Unarchive this project to make it active again?")) return;
+    try {
+      await api.patch(`/api/projects/${id}/unarchive`);
+      loadProject();
+    } catch (err) {
+      alert(err.response?.data?.message || "Error unarchiving project");
+    }
+  };
+
   if (loading || !project) {
     return (
       <PageContainer>
@@ -263,9 +283,32 @@ export default function TeacherProjectDetails() {
     );
   }
 
+  const isArchived = project.isArchived;
+
   return (
     <PageContainer>
       <div className="space-y-10">
+        {/* Read-only Banner for Archived Projects */}
+        {isArchived && (
+          <div className="rounded-3xl border border-amber-400/30 bg-amber-400/10 p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🔒</span>
+              <div>
+                <p className="font-semibold text-amber-300">This project is archived (read-only)</p>
+                <p className="text-sm text-amber-200/70 mt-1">
+                  All edit operations are disabled. You can view all data but cannot make changes.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleUnarchive}
+              className="rounded-2xl border border-green-400/30 bg-green-400/10 px-4 py-2 text-sm font-semibold text-green-300 transition hover:bg-green-400/20"
+            >
+              Unarchive Project
+            </button>
+          </div>
+        )}
+
         <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-brand-dark to-brand-surface p-8 shadow-2xl shadow-black/40">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -280,7 +323,7 @@ export default function TeacherProjectDetails() {
                   View Progress
                 </Link>
               )}
-              {editingProject ? (
+              {editingProject && !isArchived ? (
                 <form onSubmit={updateProject} className="mt-4 space-y-4">
                   <input
                     type="text"
@@ -333,12 +376,31 @@ export default function TeacherProjectDetails() {
               )}
             </div>
             {!editingProject && (
-              <button
-                onClick={() => setEditingProject(true)}
-                className="ml-4 rounded-2xl border border-white/15 px-4 py-2 text-sm text-white/70 hover:border-white/40"
-              >
-                Edit
-              </button>
+              <div className="flex gap-2 ml-4">
+                {!isArchived && (
+                  <button
+                    onClick={() => setEditingProject(true)}
+                    className="rounded-2xl border border-white/15 px-4 py-2 text-sm text-white/70 hover:border-white/40"
+                  >
+                    Edit
+                  </button>
+                )}
+                {isArchived ? (
+                  <button
+                    onClick={handleUnarchive}
+                    className="rounded-2xl border border-green-400/30 bg-green-400/10 px-4 py-2 text-sm font-semibold text-green-300 transition hover:bg-green-400/20"
+                  >
+                    Unarchive
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleArchive}
+                    className="rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm font-semibold text-amber-300 transition hover:bg-amber-400/20"
+                  >
+                    Archive
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -369,34 +431,40 @@ export default function TeacherProjectDetails() {
                       {ps.student.profile?.firstName} {ps.student.profile?.lastName}
                       <span className="text-white/50"> · {ps.student.email}</span>
                     </div>
-                    <button
-                      onClick={() => removeStudent(ps.studentId)}
-                      className="ml-3 rounded-lg border border-red-400/30 px-2 py-1 text-xs text-red-300 transition hover:border-red-400 hover:text-red-200"
-                    >
-                      Remove
-                    </button>
+                    {!isArchived && (
+                      <button
+                        onClick={() => removeStudent(ps.studentId)}
+                        className="ml-3 rounded-lg border border-red-400/30 px-2 py-1 text-xs text-red-300 transition hover:border-red-400 hover:text-red-200"
+                      >
+                        Remove
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
             )}
 
-            <h3 className="mt-8 text-lg font-semibold text-white">Add student</h3>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              {students
-                .filter((s) => !project.students.some((ps) => ps.studentId === s.id))
-                .map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => addStudent(s.id)}
-                    className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-left text-white/80 transition hover:border-brand-secondary/40 hover:text-white"
-                  >
-                    <span className="block font-semibold">
-                      {s.profile?.firstName} {s.profile?.lastName}
-                    </span>
-                    <span className="text-xs text-white/50">{s.email}</span>
-                  </button>
-                ))}
-            </div>
+            {!isArchived && (
+              <>
+                <h3 className="mt-8 text-lg font-semibold text-white">Add student</h3>
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  {students
+                    .filter((s) => !project.students.some((ps) => ps.studentId === s.id))
+                    .map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => addStudent(s.id)}
+                        className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-left text-white/80 transition hover:border-brand-secondary/40 hover:text-white"
+                      >
+                        <span className="block font-semibold">
+                          {s.profile?.firstName} {s.profile?.lastName}
+                        </span>
+                        <span className="text-xs text-white/50">{s.email}</span>
+                      </button>
+                    ))}
+                </div>
+              </>
+            )}
 
           </div>
 
@@ -511,18 +579,22 @@ export default function TeacherProjectDetails() {
                               >
                                 Review
                               </Link>
-                              <button
-                                onClick={() => startEditTask(task)}
-                                className="rounded-lg border border-white/15 px-2 py-1 text-xs text-white/70 hover:border-white/40"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => deleteTask(task.id)}
-                                className="rounded-lg border border-red-400/30 px-2 py-1 text-xs text-red-300 hover:border-red-400 hover:text-red-200"
-                              >
-                                Delete
-                              </button>
+                              {!isArchived && (
+                                <>
+                                  <button
+                                    onClick={() => startEditTask(task)}
+                                    className="rounded-lg border border-white/15 px-2 py-1 text-xs text-white/70 hover:border-white/40"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => deleteTask(task.id)}
+                                    className="rounded-lg border border-red-400/30 px-2 py-1 text-xs text-red-300 hover:border-red-400 hover:text-red-200"
+                                  >
+                                    Delete
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
 
@@ -534,7 +606,7 @@ export default function TeacherProjectDetails() {
                                   ? `${task.student.profile?.firstName} ${task.student.profile?.lastName}`
                                   : "Unassigned"}
                               </span>
-                              {task.student && (
+                              {task.student && !isArchived && (
                                 <button
                                   onClick={() => removeStudentFromTask(task.id)}
                                   className="ml-2 rounded-lg border border-red-400/30 px-2 py-1 text-xs text-red-300 hover:border-red-400 hover:text-red-200"
@@ -566,9 +638,10 @@ export default function TeacherProjectDetails() {
               )}
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-brand-dark/70 p-6 shadow-inner shadow-black/50">
-              <h3 className="text-xl font-semibold text-white">Add task</h3>
-              <form onSubmit={addTask} className="mt-4 space-y-4">
+            {!isArchived && (
+              <div className="rounded-3xl border border-white/10 bg-brand-dark/70 p-6 shadow-inner shadow-black/50">
+                <h3 className="text-xl font-semibold text-white">Add task</h3>
+                <form onSubmit={addTask} className="mt-4 space-y-4">
                 <input
                   type="text"
                   placeholder="Task title"
@@ -634,6 +707,7 @@ export default function TeacherProjectDetails() {
                 </button>
               </form>
             </div>
+            )}
           </div>
         </div>
       </div>
