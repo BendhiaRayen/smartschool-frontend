@@ -1,15 +1,19 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import PageContainer from "../components/PageContainer";
 import api from "../api/axios";
+import ProjectAiInsights from "../components/ai/ProjectAiInsights";
+import { useAuthStore } from "../store/auth";
 
 const inputClass =
-  "w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/40 outline-none";
+  "w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/40 outline-none transition-all duration-300";
 
 // Status buttons removed - only students can change task status
 
 export default function TeacherProjectDetails() {
   const { id } = useParams();
+  const { user } = useAuthStore();
 
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -278,7 +282,12 @@ export default function TeacherProjectDetails() {
   if (loading || !project) {
     return (
       <PageContainer>
-        <p className="text-white/70">Loading project...</p>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="mb-4 text-4xl animate-pulse">⏳</div>
+            <p className="text-white/70">Loading project...</p>
+          </div>
+        </div>
       </PageContainer>
     );
   }
@@ -290,39 +299,57 @@ export default function TeacherProjectDetails() {
       <div className="space-y-10">
         {/* Read-only Banner for Archived Projects */}
         {isArchived && (
-          <div className="rounded-3xl border border-amber-400/30 bg-amber-400/10 p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">🔒</span>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-3xl border border-amber-400/30 bg-gradient-to-br from-amber-400/10 to-orange-400/10 p-5 flex items-center justify-between backdrop-blur-sm"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-400/20 text-2xl backdrop-blur-sm">
+                🔒
+              </div>
               <div>
-                <p className="font-semibold text-amber-300">This project is archived (read-only)</p>
-                <p className="text-sm text-amber-200/70 mt-1">
+                <p className="font-bold text-amber-300">This project is archived (read-only)</p>
+                <p className="text-sm text-amber-200/80 mt-1">
                   All edit operations are disabled. You can view all data but cannot make changes.
                 </p>
               </div>
             </div>
             <button
               onClick={handleUnarchive}
-              className="rounded-2xl border border-green-400/30 bg-green-400/10 px-4 py-2 text-sm font-semibold text-green-300 transition hover:bg-green-400/20"
+              className="rounded-2xl border border-green-400/30 bg-green-400/10 px-5 py-2.5 text-sm font-bold text-green-300 backdrop-blur-sm transition-all duration-300 hover:bg-green-400/20 hover:scale-105"
             >
-              Unarchive Project
+              ↺ Unarchive
             </button>
-          </div>
+          </motion.div>
         )}
 
-        <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-brand-dark to-brand-surface p-8 shadow-2xl shadow-black/40">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
-                Project overview
-              </p>
-              {project && (
-                <Link
-                  to={`/teacher/projects/${id}/progress`}
-                  className="mt-4 inline-block rounded-2xl border border-brand-secondary/40 bg-brand-secondary/10 px-4 py-2 text-sm font-semibold text-brand-secondary transition hover:bg-brand-secondary/20"
-                >
-                  View Progress
-                </Link>
-              )}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-brand-dark via-brand-dark to-brand-surface p-8 shadow-2xl shadow-black/40"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-accent/5 via-transparent to-brand-secondary/5"></div>
+          <div className="relative">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-accent/20 to-brand-secondary/20 text-xl backdrop-blur-sm">
+                    📚
+                  </div>
+                  <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
+                    Project overview
+                  </p>
+                </div>
+                {project && (
+                  <Link
+                    to={`/teacher/projects/${id}/progress`}
+                    className="mb-4 inline-flex items-center gap-2 rounded-2xl border border-brand-secondary/40 bg-brand-secondary/10 px-4 py-2 text-sm font-bold text-brand-secondary backdrop-blur-sm transition-all duration-300 hover:bg-brand-secondary/20 hover:scale-105"
+                  >
+                    <span>📊</span>
+                    <span>View Progress</span>
+                  </Link>
+                )}
               {editingProject && !isArchived ? (
                 <form onSubmit={updateProject} className="mt-4 space-y-4">
                   <input
@@ -365,129 +392,185 @@ export default function TeacherProjectDetails() {
                 </form>
               ) : (
                 <>
-                  <h1 className="mt-4 text-4xl font-semibold text-white">{project.title}</h1>
-                  <p className="mt-3 text-white/70">{project.description}</p>
+                  <h1 className="mt-4 bg-gradient-to-r from-white to-white/80 bg-clip-text text-4xl font-bold text-transparent">{project.title}</h1>
+                  <p className="mt-3 text-lg text-white/80">{project.description}</p>
                   {project.deadline && (
-                    <span className="mt-5 inline-flex rounded-full border border-white/10 px-4 py-2 text-xs text-white/60">
-                      Deadline: {new Date(project.deadline).toLocaleDateString()}
+                    <span className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-white/80 backdrop-blur-sm">
+                      <span>📅</span>
+                      <span>Deadline: {new Date(project.deadline).toLocaleDateString()}</span>
                     </span>
                   )}
                 </>
               )}
-            </div>
-            {!editingProject && (
-              <div className="flex gap-2 ml-4">
-                {!isArchived && (
-                  <button
-                    onClick={() => setEditingProject(true)}
-                    className="rounded-2xl border border-white/15 px-4 py-2 text-sm text-white/70 hover:border-white/40"
-                  >
-                    Edit
-                  </button>
-                )}
-                {isArchived ? (
-                  <button
-                    onClick={handleUnarchive}
-                    className="rounded-2xl border border-green-400/30 bg-green-400/10 px-4 py-2 text-sm font-semibold text-green-300 transition hover:bg-green-400/20"
-                  >
-                    Unarchive
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleArchive}
-                    className="rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm font-semibold text-amber-300 transition hover:bg-amber-400/20"
-                  >
-                    Archive
-                  </button>
-                )}
               </div>
-            )}
+              {!editingProject && (
+                <div className="flex gap-2 ml-4">
+                  {!isArchived && (
+                    <button
+                      onClick={() => setEditingProject(true)}
+                      className="rounded-2xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/40 hover:bg-white/10 hover:text-white"
+                    >
+                      ✏️ Edit
+                    </button>
+                  )}
+                  {isArchived ? (
+                    <button
+                      onClick={handleUnarchive}
+                      className="rounded-2xl border border-green-400/30 bg-green-400/10 px-4 py-2.5 text-sm font-bold text-green-300 backdrop-blur-sm transition-all duration-300 hover:bg-green-400/20 hover:scale-105"
+                    >
+                      ↺ Unarchive
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleArchive}
+                      className="rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-2.5 text-sm font-bold text-amber-300 backdrop-blur-sm transition-all duration-300 hover:bg-amber-400/20 hover:scale-105"
+                    >
+                      📦 Archive
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </motion.div>
+
+        {/* AI Insights Section - Only for Teachers and Admins */}
+        {(user?.role === "TEACHER" || user?.role === "ADMIN") && (
+          <ProjectAiInsights projectId={Number(id)} />
+        )}
 
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-black/30">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
-                  Cohort
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold text-white">
-                  Assigned students
-                </h2>
-              </div>
-            </div>
-
-            {project.students.length === 0 ? (
-              <p className="mt-6 text-white/60">No students assigned yet.</p>
-            ) : (
-              <ul className="mt-6 space-y-3">
-                {project.students.map((ps) => (
-                  <li
-                    key={ps.id}
-                    className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80"
-                  >
-                    <div>
-                      {ps.student.profile?.firstName} {ps.student.profile?.lastName}
-                      <span className="text-white/50"> · {ps.student.email}</span>
-                    </div>
-                    {!isArchived && (
-                      <button
-                        onClick={() => removeStudent(ps.studentId)}
-                        className="ml-3 rounded-lg border border-red-400/30 px-2 py-1 text-xs text-red-300 transition hover:border-red-400 hover:text-red-200"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {!isArchived && (
-              <>
-                <h3 className="mt-8 text-lg font-semibold text-white">Add student</h3>
-                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                  {students
-                    .filter((s) => !project.students.some((ps) => ps.studentId === s.id))
-                    .map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => addStudent(s.id)}
-                        className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-left text-white/80 transition hover:border-brand-secondary/40 hover:text-white"
-                      >
-                        <span className="block font-semibold">
-                          {s.profile?.firstName} {s.profile?.lastName}
-                        </span>
-                        <span className="text-xs text-white/50">{s.email}</span>
-                      </button>
-                    ))}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+            className="group relative rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-6 shadow-lg shadow-black/30 backdrop-blur-2xl"
+          >
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+            <div className="relative">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 text-xl backdrop-blur-sm">
+                  👥
                 </div>
-              </>
-            )}
-
-          </div>
-
-          <div className="space-y-6">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-black/30">
-              <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
-                    Taskboard
+                    Cohort
                   </p>
-                  <h2 className="mt-2 text-2xl font-semibold text-white">Tasks</h2>
+                  <h2 className="mt-1 text-2xl font-bold text-white">
+                    Assigned students
+                  </h2>
                 </div>
               </div>
 
-              {project.tasks.length === 0 ? (
-                <p className="mt-6 text-white/60">No tasks yet.</p>
+              {project.students.length === 0 ? (
+                <div className="mt-6 rounded-2xl border border-dashed border-white/20 bg-white/5 p-6 text-center">
+                  <div className="text-4xl mb-2">👤</div>
+                  <p className="text-white/60">No students assigned yet.</p>
+                </div>
               ) : (
-                <div className="mt-6 space-y-4">
-                  {project.tasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                <ul className="mt-6 space-y-3">
+                  {project.students.map((ps, index) => (
+                    <motion.li
+                      key={ps.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2 + index * 0.05 }}
+                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm transition-all duration-300 hover:border-brand-secondary/40 hover:bg-white/10"
                     >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-500/20 text-sm backdrop-blur-sm">
+                          👤
+                        </div>
+                        <div>
+                          <span className="block font-semibold text-white">
+                            {ps.student.profile?.firstName} {ps.student.profile?.lastName}
+                          </span>
+                          <span className="text-xs text-white/50">{ps.student.email}</span>
+                        </div>
+                      </div>
+                      {!isArchived && (
+                        <button
+                          onClick={() => removeStudent(ps.studentId)}
+                          className="ml-3 rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-1.5 text-xs font-semibold text-red-300 backdrop-blur-sm transition-all duration-300 hover:border-red-400 hover:bg-red-400/20"
+                        >
+                          🗑️
+                        </button>
+                      )}
+                    </motion.li>
+                  ))}
+                </ul>
+              )}
+
+              {!isArchived && (
+                <>
+                  <h3 className="mt-8 mb-4 text-lg font-bold text-white">Add student</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {students
+                      .filter((s) => !project.students.some((ps) => ps.studentId === s.id))
+                      .map((s, index) => (
+                        <motion.button
+                          key={s.id}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.3 + index * 0.05 }}
+                          onClick={() => addStudent(s.id)}
+                          className="group/student relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-left backdrop-blur-sm transition-all duration-300 hover:border-brand-secondary/40 hover:bg-white/10"
+                        >
+                          <div className="relative z-10">
+                            <div className="mb-1 flex items-center gap-2">
+                              <span className="text-sm">👤</span>
+                              <span className="block font-bold text-white">
+                                {s.profile?.firstName} {s.profile?.lastName}
+                              </span>
+                            </div>
+                            <span className="text-xs text-white/50">{s.email}</span>
+                          </div>
+                        </motion.button>
+                      ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="space-y-6"
+          >
+            <div className="group relative rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-6 shadow-lg shadow-black/30 backdrop-blur-2xl">
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+              <div className="relative">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 text-xl backdrop-blur-sm">
+                    ✅
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.4em] text-brand-secondary">
+                      Taskboard
+                    </p>
+                    <h2 className="mt-1 text-2xl font-bold text-white">Tasks</h2>
+                  </div>
+                </div>
+
+                {project.tasks.length === 0 ? (
+                  <div className="mt-6 rounded-2xl border border-dashed border-white/20 bg-white/5 p-6 text-center">
+                    <div className="text-4xl mb-2">📝</div>
+                    <p className="text-white/60">No tasks yet.</p>
+                  </div>
+                ) : (
+                  <div className="mt-6 space-y-4">
+                    {project.tasks.map((task, index) => (
+                      <motion.div
+                        key={task.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 + index * 0.05 }}
+                        className="group/task relative rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-secondary/40 hover:shadow-lg"
+                      >
+                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 opacity-0 transition-opacity duration-300 group-hover/task:opacity-100"></div>
+                        <div className="relative">
                       {editingTask === task.id ? (
                         <div className="space-y-4">
                           <input
@@ -560,38 +643,42 @@ export default function TeacherProjectDetails() {
                         <>
                           <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="flex-1">
-                              <h3 className="text-lg font-semibold text-white">
-                                {task.title}
-                              </h3>
-                              <p className="text-sm text-white/60">
+                              <div className="mb-2 flex items-center gap-2">
+                                <span className="text-lg">📋</span>
+                                <h3 className="text-lg font-bold text-white">
+                                  {task.title}
+                                </h3>
+                              </div>
+                              <p className="text-sm leading-relaxed text-white/70">
                                 {task.description}
                               </p>
                             </div>
                             <div className="flex items-center gap-2">
                               {task.deadline && (
-                                <span className="text-xs uppercase tracking-wide text-white/60">
-                                  {new Date(task.deadline).toLocaleDateString()}
+                                <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-white/80 backdrop-blur-sm">
+                                  <span>📅</span>
+                                  <span>{new Date(task.deadline).toLocaleDateString()}</span>
                                 </span>
                               )}
                               <Link
                                 to={`/teacher/tasks/${task.id}/submissions`}
-                                className="rounded-lg border border-brand-secondary/40 bg-brand-secondary/10 px-2 py-1 text-xs text-brand-secondary hover:bg-brand-secondary/20"
+                                className="rounded-lg border border-brand-secondary/40 bg-brand-secondary/10 px-3 py-1.5 text-xs font-bold text-brand-secondary backdrop-blur-sm transition-all duration-300 hover:bg-brand-secondary/20 hover:scale-105"
                               >
-                                Review
+                                📝 Review
                               </Link>
                               {!isArchived && (
                                 <>
                                   <button
                                     onClick={() => startEditTask(task)}
-                                    className="rounded-lg border border-white/15 px-2 py-1 text-xs text-white/70 hover:border-white/40"
+                                    className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/40 hover:bg-white/10 hover:text-white"
                                   >
-                                    Edit
+                                    ✏️
                                   </button>
                                   <button
                                     onClick={() => deleteTask(task.id)}
-                                    className="rounded-lg border border-red-400/30 px-2 py-1 text-xs text-red-300 hover:border-red-400 hover:text-red-200"
+                                    className="rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-1.5 text-xs font-semibold text-red-300 backdrop-blur-sm transition-all duration-300 hover:border-red-400 hover:bg-red-400/20"
                                   >
-                                    Delete
+                                    🗑️
                                   </button>
                                 </>
                               )}
@@ -632,16 +719,30 @@ export default function TeacherProjectDetails() {
                           </div>
                         </>
                       )}
-                    </div>
-                  ))}
-                </div>
-              )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {!isArchived && (
-              <div className="rounded-3xl border border-white/10 bg-brand-dark/70 p-6 shadow-inner shadow-black/50">
-                <h3 className="text-xl font-semibold text-white">Add task</h3>
-                <form onSubmit={addTask} className="mt-4 space-y-4">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="group relative rounded-3xl border border-white/10 bg-gradient-to-br from-brand-dark/70 to-brand-dark/50 p-6 shadow-inner shadow-black/50 backdrop-blur-2xl"
+              >
+                <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+                <div className="relative">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 text-xl backdrop-blur-sm">
+                      ➕
+                    </div>
+                    <h3 className="text-xl font-bold text-white">Add task</h3>
+                  </div>
+                  <form onSubmit={addTask} className="mt-4 space-y-4">
                 <input
                   type="text"
                   placeholder="Task title"
@@ -699,16 +800,20 @@ export default function TeacherProjectDetails() {
                     ))}
                   </select>
                 </div>
-                <button
-                  type="submit"
-                  className="w-full rounded-2xl bg-gradient-to-r from-brand-accent to-brand-secondary px-4 py-3 font-semibold text-brand-dark shadow-glow transition hover:translate-y-0.5"
-                >
-                  Add task
-                </button>
-              </form>
-            </div>
+                    <button
+                      type="submit"
+                      className="group/btn relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-brand-accent to-brand-secondary px-4 py-3 font-bold text-brand-dark shadow-lg shadow-brand-accent/30 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-brand-accent/40"
+                    >
+                      <span className="relative z-10 flex items-center justify-center gap-2">
+                        <span>✨</span>
+                        <span>Add task</span>
+                      </span>
+                    </button>
+                  </form>
+                </div>
+              </motion.div>
             )}
-          </div>
+          </motion.div>
         </div>
       </div>
     </PageContainer>

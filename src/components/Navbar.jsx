@@ -30,18 +30,6 @@ export default function Navbar() {
             </div>
           </Link>
 
-          <div className="hidden items-center gap-6 text-[0.95rem] tracking-tight md:flex">
-            <a href="#features" className="transition hover:text-white">
-              Features
-            </a>
-            <a href="#personas" className="transition hover:text-white">
-              Roles
-            </a>
-            <a href="#insights" className="transition hover:text-white">
-              Insights
-            </a>
-          </div>
-
           <div className="flex items-center gap-3">
             {!user ? (
               <>
